@@ -1,4 +1,6 @@
 # zoozl
 
 Install dependencies:
-odoo/requirements.txt
+pip install -r odoo/requirements.txt
+Run:
+python zoozl.py
