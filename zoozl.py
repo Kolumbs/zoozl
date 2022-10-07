@@ -74,6 +74,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
         if "Sec-WebSocket-Key" not in headers:
             sendback = b'HTTP/1.1 400 Missing Sec-WebSocket-Key header\r\n'
             self.request.send(sendback)
+            return
         self.request.send(self.handshake(headers["Sec-WebSocket-Key"]))
         while True:
             frame = self.read_frame()
@@ -169,6 +170,7 @@ def start(port):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=20)
     parser = argparse.ArgumentParser(description='Zoozl hub of services')
     parser.add_argument(
         'port',

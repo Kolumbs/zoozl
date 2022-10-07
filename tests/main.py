@@ -2,6 +2,8 @@
 import subprocess
 import time
 import unittest
+import urllib.error
+import urllib.request
 
 import websockets
 
@@ -30,3 +32,8 @@ class Server(unittest.IsolatedAsyncioTestCase):
             await websocket.ping()
             await websocket.send("Ābece")
             self.assertEqual(await websocket.recv(), 'Hello')
+        with self.assertRaises(urllib.error.HTTPError) as catch:
+            with urllib.request.urlopen(f"http://localhost:{self.port}"):
+                pass
+        self.assertEqual(400, catch.exception.status)
+        self.assertIn("Missing Sec-WebSocket-Key header", catch.exception.reason)
