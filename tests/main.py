@@ -1,4 +1,5 @@
 """Main test on websocket server"""
+import json
 import subprocess
 import time
 import unittest
@@ -31,7 +32,9 @@ class Server(unittest.IsolatedAsyncioTestCase):
         async with websockets.connect(f"ws://localhost:{self.port}") as websocket:
             await websocket.ping()
             await websocket.send("Ābece")
-            self.assertEqual(await websocket.recv(), 'Hello')
+            result = await websocket.recv()
+            result = json.loads(result)
+            self.assertEqual(result, {"author": "Oscar", "text": 'Hello!'})
         with self.assertRaises(urllib.error.HTTPError) as catch:
             with urllib.request.urlopen(f"http://localhost:{self.port}"):
                 pass

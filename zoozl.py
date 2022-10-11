@@ -1,5 +1,4 @@
 """Zoozl services hub"""
-# pylint: disable=invalid-name
 import argparse
 import base64
 from dataclasses import dataclass
@@ -12,6 +11,7 @@ import sys
 
 log = logging.getLogger("zoozl")
 
+# pylint: disable=invalid-name
 def tcp_line(sock):
     """
     consume first TCP line
@@ -135,9 +135,9 @@ class ZoozlBot(socketserver.StreamRequestHandler):
     def send_text_frame(self, text):
         """send text frame"""
         log.warning("received text: %s", text.decode())
-        sendback = 0b1000000100000101
+        sendback = 0b1000000100100101
         sendback = sendback.to_bytes(2, "big")
-        sendback += b"Hello"
+        sendback += b'{"author": "Oscar", "text": "Hello!"}'
         self.request.send(sendback)
 
     def handshake(self, webkey):
