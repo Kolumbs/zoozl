@@ -56,7 +56,7 @@ def get_frame(op_code, payload):
     frame = bytearray.fromhex(f'{FIN}{code}')
     length = len(payload)
     if length > 125:
-        raise RuntimeError("unsupported")
+        raise RuntimeError("unsupported length")
     frame += length.to_bytes(1, byteorder="big")
     frame += payload
     return frame

@@ -1,1 +1,2 @@
 membank==0.4.0
+rapidfuzz==2.11.1

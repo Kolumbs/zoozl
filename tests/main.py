@@ -39,7 +39,8 @@ class Server(unittest.IsolatedAsyncioTestCase):
 
     async def test(self):
         """call an open socket"""
-        greet = 'Hello! What would you like me to do?'
+        greet = "Hello! I am bot and I represent company "
+        greet += "that made me and can make others similar to me."
         async with websockets.connect(f"ws://localhost:{self.port}") as websocket:
             await self.assert_answer(websocket, greet)
             await websocket.send("Ābece")

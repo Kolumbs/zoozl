@@ -1,10 +1,12 @@
 """Zoozl services hub"""
 import argparse
 import http.client
+import json
 import logging
 import socketserver
 import sys
 
+import chat
 import websocket
 
 
@@ -50,10 +52,12 @@ class ZoozlBot(socketserver.StreamRequestHandler):
             self.request.send(sendback)
             return
         self.request.send(websocket.handshake(headers["Sec-WebSocket-Key"]))
+        bot = chat.Chat(self.client_address, self.send_message)
+        bot.greet()
         while True:
             frame = websocket.read_frame(self.request)
             if frame.op_code == "TEXT":
-                self.send_text_frame(frame.data)
+                bot.ask(chat.Message(frame.data.decode()))
             elif frame.op_code == "CLOSE":
                 self.send_close(frame.data)
                 break
@@ -71,11 +75,11 @@ class ZoozlBot(socketserver.StreamRequestHandler):
         """send pong frame"""
         self.request.send(websocket.get_frame("PONG", data))
 
-    def send_text_frame(self, text):
-        """send text frame"""
-        log.warning("received text: %s", text.decode())
-        sendback = b'{"author": "Oscar", "text": "Hello!"}'
-        self.request.send(websocket.get_frame("TEXT", sendback))
+    def send_message(self, message):
+        """send back message"""
+        packet = {"author": "Oscar", "text": message.text}
+        packet = json.dumps(packet)
+        self.request.send(websocket.get_frame("TEXT", packet.encode()))
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
