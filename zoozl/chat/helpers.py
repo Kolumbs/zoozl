@@ -57,7 +57,7 @@ class Games(Interface):
         if "game" not in package.conversation.data:
             self.get_game(package)
         else:
-            getattr(self, package.conversion.data["game"])(package)
+            getattr(self, package.conversation.data["game"])(package)
 
     def get_game(self, package):
         """try to get game name or ask for it"""
@@ -78,13 +78,14 @@ class Games(Interface):
     def bull_game(self, package):
         """play a number guessing game"""
         if "bull_number" in package.conversation.data:
-            if len(package.message.text) != 4:
+            number = str(package.message.text)
+            if len(number) != 4:
                 package.callback("Give number with exactly 4 digits")
-            elif len(set(package.message.text)) != len(package.message.text):
+            elif len(set(number)) != len(number):
                 package.callback("Digits must be unique in number")
             else:
                 bulls, cows = count_bulls_cows(
-                    package.message.text,
+                    number,
                     package.conversation.data["bull_number"]
                 )
                 if bulls == 4:

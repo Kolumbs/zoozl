@@ -59,3 +59,4 @@ class BullGame(AbstractTest):
         self.ask("play games")
         self.ask("yes")
         self.assert_response("Guess 4 digit number")
+        self.ask("1234")
