@@ -56,7 +56,13 @@ class ZoozlBot(socketserver.StreamRequestHandler):
             frame = websocket.read_frame(self.request)
             if frame.op_code == "TEXT":
                 log.debug("Asking: %s", frame.data.decode())
-                bot.ask(chat.Message(frame.data.decode()))
+                msg = {}
+                try:
+                    msg = json.loads(frame.data.decode())
+                except json.decoder.JSONDecodeError:
+                    log.info("Invalid json format: %s", frame.data.decode())
+                if "text" in msg:
+                    bot.ask(chat.Message(msg["text"]))
             elif frame.op_code == "CLOSE":
                 self.send_close(frame.data)
                 break

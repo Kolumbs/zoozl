@@ -48,6 +48,7 @@ class Help(AbstractTest):
         self.ask("hello")
         self.assert_response("Try asking:\nplay games")
         self.ask("play games")
+        self.assert_response("what game you want to play? bulls and cows?")
 
 
 class BullGame(AbstractTest):
