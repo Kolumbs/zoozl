@@ -1,13 +1,11 @@
-"""Zoozl services hub"""
-import argparse
+"""Zoozl server"""
 import http.client
 import json
 import logging
 import socketserver
 import sys
 
-import chat
-import websocket
+from zoozl import chat, websocket
 
 
 log = logging.getLogger("zoozl")
@@ -92,15 +90,3 @@ def start(port):
         log.info('Server started listening on port: %s', port)
         sys.stdout.flush()
         server.serve_forever()
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=20)
-    parser = argparse.ArgumentParser(description='Zoozl hub of services')
-    parser.add_argument(
-        'port',
-        type = int,
-        help = 'port number to use for service',
-    )
-    args = parser.parse_args()
-    start(args.port)

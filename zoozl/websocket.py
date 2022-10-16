@@ -9,7 +9,6 @@ import base64
 from dataclasses import dataclass
 import enum
 import hashlib
-import struct
 import sys
 
 
@@ -90,7 +89,8 @@ def read_frame(socket):
         new_frame = Frame("TEXT", data)
         return new_frame
     if op_code == 8:
-        code = struct.unpack("!H", data[:2])
+        # note on upacking status code
+        # code = struct.unpack("!H", data[:2])
         new_frame = Frame("CLOSE", data)
         return new_frame
     raise RuntimeError(f"Unsupported frame op code: {op_code}")

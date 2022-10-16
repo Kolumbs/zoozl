@@ -1,4 +1,5 @@
 """Module defines chat subject commands"""
+# pylint: disable=all
 import dataclasses as data
 from dataclasses import dataclass
 
