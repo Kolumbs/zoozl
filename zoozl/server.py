@@ -55,6 +55,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
         while True:
             frame = websocket.read_frame(self.request)
             if frame.op_code == "TEXT":
+                log.debug("Asking: %s", frame.data.decode())
                 bot.ask(chat.Message(frame.data.decode()))
             elif frame.op_code == "CLOSE":
                 self.send_close(frame.data)
@@ -75,6 +76,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
 
     def send_message(self, message):
         """send back message"""
+        log.debug("Sending: %s", message.text)
         packet = {"author": "Oscar", "text": message.text}
         packet = json.dumps(packet)
         self.request.send(websocket.get_frame("TEXT", packet.encode()))
