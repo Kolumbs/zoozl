@@ -4,7 +4,7 @@ Zoozl services hub
 import argparse
 import logging
 
-from .zoozl import start
+from .server import start
 
 
 if __name__ == "__main__":
