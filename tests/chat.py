@@ -56,7 +56,8 @@ class BullGame(AbstractTest):
 
     def test(self):
         """play through a bull game"""
-        self.ask("play games")
+        self.ask("play game")
+        self.assert_response("what game you want to play? bulls and cows?")
         self.ask("yes")
         self.assert_response("Guess 4 digit number")
         self.ask("1234")

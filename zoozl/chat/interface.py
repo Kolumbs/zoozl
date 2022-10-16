@@ -129,8 +129,9 @@ class Chat():
         otherwise returns None
         """
         pos = process.extractOne(message.text.lower(), self._commands.keys())
+        print("get_subject", message.text.lower(), pos)
         message.text = "" # So that next consumer does not have it
-        if pos and pos[1] >= 95:
+        if pos and pos[1] >= 90:
             self.set_subject(pos[0])
             return pos[0]
         return None
