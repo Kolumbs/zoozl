@@ -82,9 +82,9 @@ class ZoozlBot(socketserver.StreamRequestHandler):
 
     def send_message(self, message):
         """send back message"""
-        log.debug("Sending: %s", message.text)
         packet = {"author": "Oscar", "text": message.text}
         packet = json.dumps(packet)
+        log.debug("Sending: %s", packet)
         self.request.send(websocket.get_frame("TEXT", packet.encode()))
 
 

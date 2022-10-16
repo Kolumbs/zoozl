@@ -129,7 +129,6 @@ class Chat():
         otherwise returns None
         """
         pos = process.extractOne(message.text.lower(), self._commands.keys())
-        print("get_subject", message.text.lower(), pos)
         message.text = "" # So that next consumer does not have it
         if pos and pos[1] >= 90:
             self.set_subject(pos[0])
@@ -152,7 +151,7 @@ class Chat():
             package = Package(message, self._t, self._call)
             self._commands[self._t.subject].consume(package)
             self._m.put(package.conversation)
-        if self._commands[self._t.subject].is_complete():
+        if self._t.subject and self._commands[self._t.subject].is_complete():
             self._clean()
 
     def _call(self, *args, **kwargs):
