@@ -1,4 +1,6 @@
 """Import external libraries"""
 import membank
 
-from .interface import Chat, Message
+from . import helpers
+from .api import Interface, Message, Conversation, Package
+from .interface import Chat

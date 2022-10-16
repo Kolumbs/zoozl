@@ -8,43 +8,11 @@ Main chat interface that external modules interact with
 >>> bot.ask(chat.Message("Hello"))
 >>> bot.close() # Important to call this, to close any resources opened related to memory
 """
-import dataclasses
-from dataclasses import dataclass
-
 import membank
 from rapidfuzz import process
 
-
-@dataclass
-class Message():
-    """Communication piece between talker and bot"""
-    text: str = ''
-    binary: bytes = b''
-
-
-@dataclass
-class Conversation():
-    """
-    Conversations with people(talkers) who request actions
-    """
-    talker: str = dataclasses.field(default=None, metadata={"key": True})
-    ongoing: bool = False
-    subject: str = ""
-    data: dict = dataclasses.field(default_factory=dict)
-    attachment: bytes = b''
-
-
-class Interface():
-    """Interface to the chat command handling"""
-    # Command names as typed by the one who asks
-    aliases = set()
-
-    def consume(self, message, conversation, callback):
-        """function that handles all requests when subject is triggered"""
-
-    def is_complete(self):
-        """must return True or False"""
-        return True
+from . import helpers
+from .api import Interface, Message, Conversation, Package
 
 
 # pylint: disable=too-many-instance-attributes, too-many-arguments
@@ -67,8 +35,8 @@ class Chat():
         for Chat instance to be able to store it's persistent memory, then
         history of talker conversations will be preserved upon instance destructions.
 
-        Conf is optional pass-through for any commands that require system wide
-        configuration.
+        Conf is optional pass-through dictionary for any commands that require system wide
+        configuration. By default includes set of available interfaces in key 'interfaces'
 
         Interfaces are additional modules that are supported by chat and to be installed
         """
@@ -79,10 +47,14 @@ class Chat():
                 talker = str(talker),
             )
         self._callback = callback
-        self._conf = conf
+        if conf and "interfaces" in conf:
+            raise RuntimeError("Name 'interfaces' is reserved and can't be used in conf")
+        self._conf = conf if conf else {}
         self._commands = {}
+        interfaces += (helpers, )
         for i in interfaces:
             self.load_interface(i)
+        self._conf['interfaces'] = self._commands
 
     def close(self):
         """when membank supports close this should close it"""
@@ -143,18 +115,20 @@ class Chat():
     def load_interface(self, interface):
         """load additional supported commands into chat interface"""
         for i in dir(interface):
-            if isinstance(i, Interface):
-                for cmd in i.aliases:
+            obj = getattr(interface, i)
+            if isinstance(obj, type) and issubclass(obj, Interface):
+                obj = obj(self._conf)
+                for cmd in obj.aliases:
                     if cmd in self._commands:
                         raise RuntimeError(f"Clash of interfaces! '{cmd}' already loaded")
-                    self._commands[cmd] = i
+                    self._commands[cmd] = obj
 
     def get_subject(self, message):
         """tries to understand subject from message
         if understood sets the subject and returns it
         otherwise returns None
         """
-        pos = process.extractOne(message.text, self._commands.keys())
+        pos = process.extractOne(message.text.lower(), self._commands.keys())
         message.text = "" # So that next consumer does not have it
         if pos and pos[1] >= 95:
             self.set_subject(pos[0])
@@ -174,8 +148,10 @@ class Chat():
     def do_subject(self, message):
         """continue on the subject"""
         if self._positive(message.text):
-            self._commands[self._t.subject].consume(message, self._t, self._call)
-        if self._commands[self._t.cmd].is_complete():
+            package = Package(message, self._t, self._call)
+            self._commands[self._t.subject].consume(package)
+            self._m.put(package.conversation)
+        if self._commands[self._t.subject].is_complete():
             self._clean()
 
     def _call(self, *args, **kwargs):
