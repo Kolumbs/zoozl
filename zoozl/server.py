@@ -24,7 +24,8 @@ def tcp_line(sock):
     method = b""
     request_uri = b""
     a = 0
-    while block != b'\n':
+    counter = 100
+    while block != b'\n' and counter:
         if block == b' ':
             a += 1
         if a == 0:
@@ -32,6 +33,7 @@ def tcp_line(sock):
         elif a == 1:
             request_uri += block
         block = sock.recv(1)
+        counter -= 1
     return (method, request_uri)
 
 
@@ -70,7 +72,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
                 elif frame.op_code == "PING":
                     self.send_pong(frame.data)
         except ConnectionResetError:
-            log.info("Client % dropped connection", self.client_address)
+            log.info("Client %s dropped connection", self.client_address)
 
     def send_close(self, text):
         """send close frame"""
