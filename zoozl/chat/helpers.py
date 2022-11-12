@@ -3,7 +3,7 @@ import random
 
 from rapidfuzz import process
 
-from .api import Interface
+from .api import Interface, Message
 
 
 class Help(Interface):
@@ -73,14 +73,14 @@ class Games(Interface):
             package.callback("OK. Let's play bulls and cows")
             self.bull_game(package)
         else:
-            package.callback("what game you want to play? bulls and cows?")
+            package.callback(Message("what game you want to play? bulls and cows?"))
 
     def bull_game(self, package):
         """play a number guessing game"""
         if "bull_number" in package.conversation.data:
             number = str(package.message.text)
             if len(number) != 4:
-                package.callback("Give number with exactly 4 digits")
+                package.callback(Message("Give number with exactly 4 digits"))
             elif len(set(number)) != len(number):
                 package.callback("Digits must be unique in number")
             else:

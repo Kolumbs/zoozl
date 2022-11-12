@@ -154,9 +154,12 @@ class Chat():
         if self._t.subject and self._commands[self._t.subject].is_complete():
             self._clean()
 
-    def _call(self, *args, **kwargs):
-        """constructs Message and routes it to callback"""
-        self._callback(Message(*args, **kwargs))
+    def _call(self, message):
+        """constructs Message and routes it to callback
+        It must be either simple string text or Message object"""
+        if not isinstance(message, Message):
+            message = Message(message)
+        self._callback(message)
 
     def _positive(self, text):
         """assert that text seems positive otherwise cancels the subject"""
