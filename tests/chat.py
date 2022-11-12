@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from zoozl import chat
+import chatbot
 
 
 class AbstractTest(unittest.TestCase):
@@ -10,18 +10,18 @@ class AbstractTest(unittest.TestCase):
     callback = MagicMock()
 
     def setUp(self):
-        self.bot = chat.Chat("caller", self.callback)
+        self.bot = chatbot.Chat("caller", self.callback)
 
     def tearDown(self):
         self.bot.close()
 
     def ask(self, *args, **kwargs):
         """ask to bot"""
-        self.bot.ask(chat.Message(*args, **kwargs))
+        self.bot.ask(chatbot.Message(*args, **kwargs))
 
     def assert_response(self, *args, **kwargs):
         """assert bot has responded"""
-        self.assertEqual(chat.Message(*args, **kwargs), self.callback.call_args.args[0])
+        self.assertEqual(chatbot.Message(*args, **kwargs), self.callback.call_args.args[0])
 
     def get_text(self):
         """get received text"""

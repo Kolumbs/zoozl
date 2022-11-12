@@ -5,7 +5,10 @@ import logging
 import socketserver
 import sys
 
-from zoozl import chat, websocket
+import chatbot
+import chatbot_fifa_extension
+
+from zoozl import websocket
 
 
 log = logging.getLogger("zoozl")
@@ -53,7 +56,11 @@ class ZoozlBot(socketserver.StreamRequestHandler):
                 self.request.send(sendback)
                 return
             self.request.send(websocket.handshake(headers["Sec-WebSocket-Key"]))
-            bot = chat.Chat(self.client_address, self.send_message)
+            bot = chatbot.Chat(
+                self.client_address,
+                self.send_message,
+                interfaces=(chatbot_fifa_extension,)
+            )
             bot.greet()
             while True:
                 frame = websocket.read_frame(self.request)
@@ -65,7 +72,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
                     except json.decoder.JSONDecodeError:
                         log.info("Invalid json format: %s", frame.data.decode())
                     if "text" in msg:
-                        bot.ask(chat.Message(msg["text"]))
+                        bot.ask(chatbot.Message(msg["text"]))
                 elif frame.op_code == "CLOSE":
                     self.send_close(frame.data)
                     break
