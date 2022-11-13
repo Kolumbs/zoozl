@@ -18,6 +18,8 @@ class Server(unittest.IsolatedAsyncioTestCase):
         port = time.time() % 100
         port = int(port) + 3000
         args = ["env/bin/python", "-m", "zoozl", str(port)]
+        args.append("--conf")
+        args.append("tests/data/conf.toml")
         self.port = port
         # pylint: disable=consider-using-with
         self.proc = subprocess.Popen(args)

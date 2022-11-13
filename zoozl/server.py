@@ -6,7 +6,6 @@ import socketserver
 import sys
 
 import chatbot
-import chatbot_fifa_extension
 
 from zoozl import websocket
 
@@ -41,7 +40,7 @@ def tcp_line(sock):
 
 
 class ZoozlBot(socketserver.StreamRequestHandler):
-    """TCP server that listens on port for Zoozl boot calls"""
+    """TCP server that listens on port for Zoozl bot calls"""
 
     def handle(self):
         try:
@@ -59,7 +58,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
             bot = chatbot.Chat(
                 self.client_address,
                 self.send_message,
-                interfaces=(chatbot_fifa_extension,)
+                conf=self.server.conf,
             )
             bot.greet()
             while True:
@@ -103,10 +102,14 @@ class ZoozlBot(socketserver.StreamRequestHandler):
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     """TCP server running on threads"""
 
+    def __init__(self, address, mixer, conf):
+        self.conf = conf
+        socketserver.TCPServer.__init__(self, address, mixer)
 
-def start(port):
+
+def start(port, conf):
     """starts listening on given port"""
-    with ThreadedTCPServer(('', port), ZoozlBot) as server:
+    with ThreadedTCPServer(('', port), ZoozlBot, conf) as server:
         log.info('Server started listening on port: %s', port)
         sys.stdout.flush()
         server.serve_forever()

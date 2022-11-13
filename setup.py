@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
     setuptools.setup(
         name="zoozl",
-        version="0.0.13",
+        version="0.0.15",
         author="Juris Kaminskis",
         author_email="juris@zoozl.net",
         description="Zoozl services",
@@ -19,8 +19,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
         install_requires=[
             "rapidfuzz==2.11.1",
             "membank==0.4.0",
-            "chatbot",
+            "chatbot>=0.0.2",
             "chatbot_fifa_extension",
         ],
-        python_requires=">=3.10",
+        python_requires=">=3.11",
 )

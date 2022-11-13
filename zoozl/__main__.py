@@ -3,8 +3,17 @@ Zoozl services hub
 """
 import argparse
 import logging
+import tomllib
 
 from .server import start
+
+
+def get_conf(path):
+    """returns dict object as configuration"""
+    if not path:
+        return {}
+    with open(path, "rb") as fname:
+        return tomllib.load(fname)
 
 
 if __name__ == "__main__":
@@ -19,9 +28,14 @@ if __name__ == "__main__":
         action = "store_true",
         help = 'enable verbose debugging mode',
     )
+    parser.add_argument(
+        '--conf',
+        type = str,
+        help = 'path for configuration',
+    )
     args = parser.parse_args()
     if args.v:
         logging.basicConfig(level=10)
     else:
         logging.basicConfig(level=20)
-    start(args.port)
+    start(args.port, get_conf(args.conf))

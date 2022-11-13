@@ -1,0 +1,5 @@
+title = "Global configuration for Chatbot"
+extensions = ["chatbot_fifa_extension"]
+
+[some-extension]
+path = "/rupert"
