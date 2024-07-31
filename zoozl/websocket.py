@@ -67,7 +67,7 @@ def read_frame(socket):
     data = socket.recv(1)
     if len(data) == 0:
         # Here should better response something like close without notice
-        return Frame("close", b'\x03\xe8')
+        return Frame("CLOSE", b'\x03\xe8')
     data = data[0]
     fin = data & 0b10000000
     if not fin:
