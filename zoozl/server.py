@@ -1,4 +1,5 @@
-"""Zoozl server"""
+"""Zoozl server."""
+
 import http.client
 import json
 import logging
@@ -12,23 +13,22 @@ from zoozl import websocket
 
 log = logging.getLogger("zoozl")
 
+
 # pylint: disable=invalid-name
 def tcp_line(sock):
-    """
-    consume first TCP line
-    if valid HTTP then return method, request-uri tuple
-    """
+    """Consume first TCP line if valid HTTP then return method, request-uri
+    tuple."""
     block = sock.recv(1)
-    if block == b'\r':
+    if block == b"\r":
         block = sock.recv(1)
-        if block == b'\n':
+        if block == b"\n":
             block = sock.recv(1)
     method = b""
     request_uri = b""
     a = 0
     counter = 100
-    while block != b'\n' and counter:
-        if block == b' ':
+    while block != b"\n" and counter:
+        if block == b" ":
             a += 1
         if a == 0:
             method += block
@@ -40,18 +40,22 @@ def tcp_line(sock):
 
 
 class ZoozlBot(socketserver.StreamRequestHandler):
-    """TCP server that listens on port for Zoozl bot calls"""
+    """TCP server that listens on port for Zoozl bot calls."""
 
     def handle(self):
         try:
-            response = tcp_line(self.request) # Need to read request line for headers to read
+            response = tcp_line(
+                self.request
+            )  # Need to read request line for headers to read
             if response[0] != b"GET":
-                log.info('Unrecognised message from %s: %s', self.client_address, response)
+                log.info(
+                    "Unrecognised message from %s: %s", self.client_address, response
+                )
                 return
             log.info("Client Connected: %s", self.client_address)
             headers = http.client.parse_headers(self.rfile)
             if "Sec-WebSocket-Key" not in headers:
-                sendback = b'HTTP/1.1 400 Missing Sec-WebSocket-Key header\r\n'
+                sendback = b"HTTP/1.1 400 Missing Sec-WebSocket-Key header\r\n"
                 self.request.send(sendback)
                 return
             self.request.send(websocket.handshake(headers["Sec-WebSocket-Key"]))
@@ -81,26 +85,26 @@ class ZoozlBot(socketserver.StreamRequestHandler):
             log.info("Client %s dropped connection", self.client_address)
 
     def send_close(self, text):
-        """send close frame"""
+        """Send close frame."""
         sendback = 0b1000100000000010
         sendback = sendback.to_bytes(2, "big")
         sendback += text
         self.request.send(sendback)
 
     def send_pong(self, data):
-        """send pong frame"""
+        """Send pong frame."""
         self.request.send(websocket.get_frame("PONG", data))
 
     def send_message(self, message):
-        """send back message"""
-        packet = {"author": "Oscar", "text": message.text}
+        """Send back message."""
+        packet = {"author": self.server.conf["author"], "text": message.text}
         packet = json.dumps(packet)
         log.debug("Sending: %s", packet)
         self.request.send(websocket.get_frame("TEXT", packet.encode()))
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    """TCP server running on threads"""
+    """TCP server running on threads."""
 
     def __init__(self, address, mixer, conf):
         self.conf = conf
@@ -108,8 +112,8 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 
 def start(port, conf):
-    """starts listening on given port"""
-    with ThreadedTCPServer(('', port), ZoozlBot, conf) as server:
-        log.info('Server started listening on port: %s', port)
+    """Starts listening on given port."""
+    with ThreadedTCPServer(("", port), ZoozlBot, conf) as server:
+        log.info("Server started listening on port: %s", port)
         sys.stdout.flush()
         server.serve_forever()

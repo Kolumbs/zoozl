@@ -1,6 +1,5 @@
-"""
-Zoozl services hub
-"""
+"""Zoozl services hub."""
+
 import argparse
 import logging
 import tomllib
@@ -9,29 +8,32 @@ from .server import start
 
 
 def get_conf(path):
-    """returns dict object as configuration"""
-    if not path:
-        return {}
-    with open(path, "rb") as fname:
-        return tomllib.load(fname)
+    """Returns dict object as configuration."""
+    conf = {}
+    if path:
+        with open(path, "rb") as fname:
+            conf = tomllib.load(fname)
+    if "author" not in conf:
+        conf["author"] = "Zoozl"
+    return conf
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Zoozl hub of services')
+    parser = argparse.ArgumentParser(description="Zoozl hub of services")
     parser.add_argument(
-        'port',
-        type = int,
-        help = 'port number to use for service',
+        "port",
+        type=int,
+        help="port number to use for service",
     )
     parser.add_argument(
-        '-v',
-        action = "store_true",
-        help = 'enable verbose debugging mode',
+        "-v",
+        action="store_true",
+        help="enable verbose debugging mode",
     )
     parser.add_argument(
-        '--conf',
-        type = str,
-        help = 'path for configuration',
+        "--conf",
+        type=str,
+        help="path for configuration",
     )
     args = parser.parse_args()
     if args.v:

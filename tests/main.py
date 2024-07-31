@@ -1,4 +1,5 @@
-"""Main test on websocket server"""
+"""Main test on websocket server."""
+
 import json
 import subprocess
 import time
@@ -11,7 +12,7 @@ import websockets
 
 # pylint: disable=no-member,bad-classmethod-argument
 class Server(unittest.IsolatedAsyncioTestCase):
-    """Test that server responds to websocket request"""
+    """Test that server responds to websocket request."""
 
     @classmethod
     def setUpClass(self):
@@ -23,7 +24,7 @@ class Server(unittest.IsolatedAsyncioTestCase):
         self.port = port
         # pylint: disable=consider-using-with
         self.proc = subprocess.Popen(args)
-        time.sleep(2) # Let the process start
+        time.sleep(2)  # Let the process start
         if self.proc.poll():
             raise RuntimeError("Process unexpectedly terminated")
 
@@ -33,14 +34,14 @@ class Server(unittest.IsolatedAsyncioTestCase):
         self.proc.wait()
 
     async def assert_answer(self, websocket, text):
-        """checks for answer"""
+        """Checks for answer."""
         result = await websocket.recv()
         result = json.loads(result)
-        self.assertEqual(result, {"author": "Oscar", "text": text})
+        self.assertEqual(result, {"author": "Zoozl", "text": text})
         return result
 
     async def test(self):
-        """call an open socket"""
+        """Call an open socket."""
         greet = "Hello! I am bot and I represent company "
         greet += "that made me and can make others similar to me."
         async with websockets.connect(f"ws://localhost:{self.port}") as websocket:
@@ -55,7 +56,7 @@ class Server(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Missing Sec-WebSocket-Key header", catch.exception.reason)
 
     async def test_crash(self):
-        """close socket abruptly"""
+        """Close socket abruptly."""
         websocket = await websockets.connect(f"ws://localhost:{self.port}")
         await websocket.send("Ā")
         await websocket.recv()

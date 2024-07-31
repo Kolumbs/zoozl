@@ -1,6 +1,7 @@
 """
 Build for zoozl services
 """
+
 import setuptools
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -8,10 +9,10 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
     setuptools.setup(
         name="zoozl",
-        version="0.0.17",
+        version="0.0.18",
         author="Juris Kaminskis",
-        author_email="juris@zoozl.net",
-        description="Zoozl services",
+        author_email="juris@kolumbs.net",
+        description="Zoozl services for chatbots",
         long_description=long_description,
         long_description_content_type="text/markdown",
         url="https://github.com/Kolumbs/zoozl",
@@ -23,4 +24,4 @@ with open("README.md", "r", encoding="utf-8") as fh:
             "chatbot_fifa_extension>=0.0.3",
         ],
         python_requires=">=3.11",
-)
+    )
