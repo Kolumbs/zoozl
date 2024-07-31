@@ -6,7 +6,7 @@ import logging
 import socketserver
 import sys
 
-import chatbot
+import chatinterface
 
 from zoozl import websocket
 
@@ -59,7 +59,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
                 self.request.send(sendback)
                 return
             self.request.send(websocket.handshake(headers["Sec-WebSocket-Key"]))
-            bot = chatbot.Chat(
+            bot = chatinterface.Chat(
                 self.client_address,
                 self.send_message,
                 conf=self.server.conf,
@@ -75,7 +75,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
                     except json.decoder.JSONDecodeError:
                         log.info("Invalid json format: %s", frame.data.decode())
                     if "text" in msg:
-                        bot.ask(chatbot.Message(msg["text"]))
+                        bot.ask(chatinterface.Message(msg["text"]))
                 elif frame.op_code == "CLOSE":
                     self.send_close(frame.data)
                     break
