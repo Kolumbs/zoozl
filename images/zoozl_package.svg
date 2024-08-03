@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="208mm"
-   height="105mm"
-   viewBox="0 0 208 105"
+   width="210mm"
+   height="148mm"
+   viewBox="0 0 210 148"
    version="1.1"
    id="svg5"
    sodipodi:docname="zoozl_package.svg"
@@ -24,7 +24,7 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.6529083"
-     inkscape:cx="326.23264"
+     inkscape:cx="325.46684"
      inkscape:cy="-35.992803"
      inkscape:window-width="1920"
      inkscape:window-height="1029"
@@ -131,144 +131,144 @@
        width="119.1783"
        height="89.744522"
        x="46.11129"
-       y="7.4155083" />
+       y="28.58218" />
     <rect
        style="fill:#fff6d5;stroke:#000000;stroke-width:0.264999;stroke-dasharray:0.264999, 0.794996"
        id="rect14399"
        width="50.987488"
        height="77.614647"
        x="52.324257"
-       y="16.606457" />
+       y="37.773144" />
     <rect
        style="fill:#fff6d5;stroke:#000000;stroke-width:0.264999;stroke-dasharray:0.264999, 0.794996"
        id="rect47"
        width="30.649494"
        height="12.000773"
        x="61.635353"
-       y="25.915913" />
+       y="47.0826" />
     <text
        xml:space="preserve"
        style="font-size:4.9389px;line-height:0.25;font-family:Sahadeva;-inkscape-font-specification:Sahadeva;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
        x="65.738014"
-       y="33.432728"
+       y="54.599415"
        id="text6049"><tspan
          sodipodi:role="line"
          id="tspan6047"
          style="stroke-width:0.264583"
          x="65.738014"
-         y="33.432728">websocket</tspan></text>
+         y="54.599415">websocket</tspan></text>
     <rect
        style="fill:#fff6d5;stroke:#000000;stroke-width:0.264999;stroke-dasharray:0.264999, 0.794996"
        id="rect47-6"
        width="30.649494"
        height="12.000773"
        x="124.63062"
-       y="47.685131" />
+       y="68.851814" />
     <text
        xml:space="preserve"
        style="font-size:4.9389px;line-height:0.25;font-family:Sahadeva;-inkscape-font-specification:Sahadeva;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
        x="132.01793"
-       y="55.262218"
+       y="76.428902"
        id="text6049-2"><tspan
          sodipodi:role="line"
          id="tspan6047-9"
          style="stroke-width:0.264583"
          x="132.01793"
-         y="55.262218">chatbot</tspan></text>
+         y="76.428902">chatbot</tspan></text>
     <rect
        style="fill:#aaccff;stroke:#000000;stroke-width:0.264999;stroke-dasharray:0.264999, 0.794996"
        id="rect47-6-1"
        width="30.649494"
        height="12.000773"
        x="176.15793"
-       y="47.597363" />
+       y="68.764046" />
     <text
        xml:space="preserve"
        style="font-size:4.9389px;line-height:0.25;font-family:Sahadeva;-inkscape-font-specification:Sahadeva;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
        x="185.13278"
-       y="55.17445"
+       y="76.341133"
        id="text6049-2-2"><tspan
          sodipodi:role="line"
          id="tspan6047-9-7"
          style="stroke-width:0.264583"
          x="185.13278"
-         y="55.17445">plugin</tspan></text>
+         y="76.341133">plugin</tspan></text>
     <rect
        style="fill:#aaccff;stroke:#000000;stroke-width:0.264999;stroke-dasharray:0.264999, 0.794996"
        id="rect47-6-1-6"
        width="30.649494"
        height="12.000773"
        x="1.4159493"
-       y="46.752316" />
+       y="67.918999" />
     <text
        xml:space="preserve"
        style="font-size:4.9389px;line-height:0.25;font-family:Sahadeva;-inkscape-font-specification:Sahadeva;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
        x="10.390805"
-       y="54.329403"
+       y="75.496086"
        id="text6049-2-2-2"><tspan
          sodipodi:role="line"
          id="tspan6047-9-7-6"
          style="stroke-width:0.264583"
          x="10.390805"
-         y="54.329403">input</tspan></text>
+         y="75.496086">input</tspan></text>
     <rect
        style="fill:#fff6d5;stroke:#000000;stroke-width:0.264999;stroke-dasharray:0.264999, 0.794996"
        id="rect47-3"
        width="30.649494"
        height="12.000773"
        x="61.492729"
-       y="47.293957" />
+       y="68.46064" />
     <text
        xml:space="preserve"
        style="font-size:4.9389px;line-height:0.25;font-family:Sahadeva;-inkscape-font-specification:Sahadeva;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
        x="72.092781"
-       y="54.803234"
+       y="75.969917"
        id="text6049-6"><tspan
          sodipodi:role="line"
          id="tspan6047-7"
          style="stroke-width:0.264583"
          x="72.092781"
-         y="54.803234">http</tspan></text>
+         y="75.969917">http</tspan></text>
     <rect
        style="fill:#fff6d5;stroke:#000000;stroke-width:0.264999;stroke-dasharray:0.264999, 0.794996"
        id="rect47-3-5"
        width="30.649494"
        height="12.000773"
        x="61.299431"
-       y="68.637932" />
+       y="89.804619" />
     <text
        xml:space="preserve"
        style="font-size:4.9389px;line-height:0.25;font-family:Sahadeva;-inkscape-font-specification:Sahadeva;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
        x="69.862076"
-       y="76.154747"
+       y="97.321434"
        id="text6049-6-3"><tspan
          sodipodi:role="line"
          id="tspan6047-7-5"
          style="stroke-width:0.264583"
          x="69.862076"
-         y="76.154747">email</tspan></text>
+         y="97.321434">email</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-start:url(#Arrow1Lstart);marker-end:url(#Arrow1Lend)"
-       d="m 156.74327,54.236984 h 17.214"
+       d="m 156.74327,75.403664 h 17.214"
        id="path23496" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-start:url(#Arrow1Lstart-0);marker-end:url(#Arrow1Lend-3)"
-       d="m 104.92359,53.975894 h 17.21413"
+       d="m 104.92359,75.142574 h 17.21413"
        id="path23496-0" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-start:url(#Arrow1Lstart-0-3);marker-end:url(#Arrow1Lend-3-7)"
-       d="M 34.29649,53.263293 H 51.510527"
+       d="M 34.29649,74.429973 H 51.510527"
        id="path23496-0-3" />
     <text
        xml:space="preserve"
        style="font-size:4.9389px;line-height:0.25;font-family:Sahadeva;-inkscape-font-specification:Sahadeva;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
        x="147.08464"
-       y="13.054325"
+       y="34.221004"
        id="text29018"><tspan
          sodipodi:role="line"
          id="tspan29016"
          style="stroke-width:0.264583"
          x="147.08464"
-         y="13.054325">zoozl</tspan></text>
+         y="34.221004">zoozl</tspan></text>
   </g>
 </svg>
