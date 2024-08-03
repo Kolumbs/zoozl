@@ -3,3 +3,4 @@ extensions = ["chatbot_fifa_extension"]
 
 [chatbot_fifa_extension]
 database_path = "tests/tmp"
+administrator = "admin"

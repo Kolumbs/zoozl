@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
     setuptools.setup(
         name="zoozl",
-        version="0.0.20",
+        version="0.0.21",
         author="Juris Kaminskis",
         author_email="juris@kolumbs.net",
         description="Zoozl services for chatbots",
@@ -20,7 +20,6 @@ with open("README.md", "r", encoding="utf-8") as fh:
         install_requires=[
             "rapidfuzz==2.11.1",
             "membank>=0.4.1",
-            "chatinterface>0.0.1",
         ],
         python_requires=">=3.11",
     )

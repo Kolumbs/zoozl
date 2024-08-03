@@ -5,6 +5,7 @@ Note on implementation:
     -> Fragmentation not supported
     -> Reading frames with payload more than 125 bytes not supported
 """
+
 import base64
 from dataclasses import dataclass
 import enum
@@ -12,7 +13,8 @@ import hashlib
 import sys
 
 
-FIN = '8' # Starting nibble of frame in hex string
+FIN = "8"  # Starting nibble of frame in hex string
+
 
 def apply_mask(data, mask):
     """
@@ -34,17 +36,19 @@ def apply_mask(data, mask):
 @dataclass
 class Frame:
     """Websocket data frame"""
+
     op_code: str
     data: bytes = b""
 
 
 class OpCodes(enum.Enum):
     """Op codes into hex nibbles"""
-    TEXT = '1'
-    BINARY = '2'
-    CLOSE = '8'
-    PING = '9'
-    PONG = 'A'
+
+    TEXT = "1"
+    BINARY = "2"
+    CLOSE = "8"
+    PING = "9"
+    PONG = "A"
 
 
 def get_frame(op_code, payload):
@@ -52,13 +56,14 @@ def get_frame(op_code, payload):
     encode binary payload as per op_code into correct frame
     """
     code = OpCodes[op_code].value
-    frame = bytearray.fromhex(f'{FIN}{code}')
+    frame = bytearray.fromhex(f"{FIN}{code}")
     length = len(payload)
     if length > 125:
         raise RuntimeError("unsupported length")
     frame += length.to_bytes(1, byteorder="big")
     frame += payload
     return frame
+
 
 def read_frame(socket):
     """
@@ -67,7 +72,7 @@ def read_frame(socket):
     data = socket.recv(1)
     if len(data) == 0:
         # Here should better response something like close without notice
-        return Frame("CLOSE", b'\x03\xe8')
+        return Frame("CLOSE", b"\x03\xe8")
     data = data[0]
     fin = data & 0b10000000
     if not fin:
@@ -94,6 +99,7 @@ def read_frame(socket):
         new_frame = Frame("CLOSE", data)
         return new_frame
     raise RuntimeError(f"Unsupported frame op code: {op_code}")
+
 
 def handshake(webkey):
     """Give bytes object for valid websocket handshake"""

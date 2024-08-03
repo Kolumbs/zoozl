@@ -1,12 +1,14 @@
 """Testcases on chat interface"""
+
 import unittest
 from unittest.mock import MagicMock
 
-import chatbot
+from zoozl import chatbot
 
 
 class AbstractTest(unittest.TestCase):
     """Abstract testcase on chat interface"""
+
     callback = MagicMock()
 
     def setUp(self):
@@ -21,7 +23,9 @@ class AbstractTest(unittest.TestCase):
 
     def assert_response(self, *args, **kwargs):
         """assert bot has responded"""
-        self.assertEqual(chatbot.Message(*args, **kwargs), self.callback.call_args.args[0])
+        self.assertEqual(
+            chatbot.Message(*args, **kwargs), self.callback.call_args.args[0]
+        )
 
     def get_text(self):
         """get received text"""
@@ -36,7 +40,9 @@ class Help(AbstractTest):
         self.ask("kudos")
         self.assert_response("What would you like me to do?")
         self.ask("brrr")
-        self.assert_response("I didn't get. Would you like me to send full list of commands?")
+        self.assert_response(
+            "I didn't get. Would you like me to send full list of commands?"
+        )
         self.ask("hello")
         self.assert_response("Try asking:\nplay games")
 
@@ -44,7 +50,9 @@ class Help(AbstractTest):
         """bot should help also when greeted"""
         self.bot.greet()
         self.ask("brr")
-        self.assert_response("I didn't get. Would you like me to send full list of commands?")
+        self.assert_response(
+            "I didn't get. Would you like me to send full list of commands?"
+        )
         self.ask("hello")
         self.assert_response("Try asking:\nplay games")
         self.ask("play games")
