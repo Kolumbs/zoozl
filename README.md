@@ -16,7 +16,7 @@ where `1601` is the port number and `chatbot.toml` is optional configuration fil
 ## Architecture
 
 zoozl package contains modules that handle various input interfaces like websocket or http POST and a chatbot interface that must be extended by plugins. Without plugin zoozl is not able to respond to any input. Plugin can be considered as a single chat assistant to handle a specific task. Plugin can be huge and complex or simple and small. It is up to the developer to decide how to structure plugins.
-![zoozl_package](images/zoozl_package.svg)
+![zoozl_package](docs/images/zoozl_package.svg)
 
 
 ## Plugin

@@ -6,5 +6,5 @@ Meant for developers who want to contribute to zoozl project.
 
 Automate the precommit steps like running tests before commiting code.
 ```bash
-cd .git/hooks/ && ln -s ../../dev/pre-commit . && cd -
+cd .git/hooks/ && ln -s ../../scripts/pre-commit . && cd -
 ```
