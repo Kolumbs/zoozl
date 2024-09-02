@@ -2,3 +2,6 @@ pylint
 websockets
 build
 chatbot_fifa_extension==0.0.12
+flake8-docstrings
+flake8
+black

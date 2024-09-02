@@ -8,7 +8,7 @@ Usage:
 """
 
 from .api import Interface, Message, Conversation, Package
-from .interface import Chat
+from .interface import Chat, InterfaceRoot
 
 
-__all__ = ["Interface", "Message", "Conversation", "Package", "Chat"]
+__all__ = ["Chat", "Conversation", "Interface", "InterfaceRoot", "Message", "Package"]

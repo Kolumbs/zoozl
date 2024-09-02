@@ -1,5 +1,6 @@
 """Main test on websocket server."""
 
+import asyncio
 import json
 import subprocess
 import time
@@ -33,9 +34,13 @@ class Server(unittest.IsolatedAsyncioTestCase):
         self.proc.terminate()
         self.proc.wait()
 
-    async def assert_answer(self, websocket, text):
+    async def assert_answer(self, websocket, text, timeout=3):
         """Checks for answer."""
-        result = await websocket.recv()
+        try:
+            async with asyncio.timeout(timeout):
+                result = await websocket.recv()
+        except TimeoutError:
+            self.fail(f"Waited to receive {text} for longer than {timeout} seconds")
         result = json.loads(result)
         self.assertEqual(result, {"author": "Zoozl", "text": text})
         return result

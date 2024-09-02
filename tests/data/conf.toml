@@ -1,5 +1,5 @@
 title = "Global configuration for Chatbot"
-extensions = ["chatbot_fifa_extension"]
+extensions = ["chatbot_fifa_extension", "zoozl.plugins.greeter"]
 
 [chatbot_fifa_extension]
 database_path = "tests/tmp"

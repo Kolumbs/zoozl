@@ -1,4 +1,4 @@
-"""Module defines common chat subject commands."""
+"""Example plugin to showcase zoozl chatbot mechanics."""
 
 import random
 
@@ -11,16 +11,19 @@ class Help(Interface):
     """Defines helper constructor for chat."""
 
     aliases = {"do get help", "help"}
+    helps = (
+        "I can't do much. I can only play a game.",
+        "I can play games.",
+        "You can try to play games.",
+    )
 
-    def consume(self, package):
-        cmds = []
-        for i in self.conf["interfaces"].keys():
-            if i in Help.aliases or i in Hello.aliases:
-                continue
-            cmds.append(i)
-        msg = "\n".join(cmds)
-        msg = "Try asking:\n" + msg
-        package.callback(msg)
+    def consume(self, context, package):
+        """Try to help user."""
+        package.callback(random.choice(self.helps))
+
+    def is_complete(self):
+        """Complete immediately the conversation."""
+        return True
 
 
 class Hello(Interface):
@@ -28,13 +31,18 @@ class Hello(Interface):
 
     aliases = {"hello", "hi", "how are you", "hey"}
 
-    def consume(self, package):
+    def consume(self, context, package):
+        """Greet the user."""
         greets = ["Hello", "Hey", "Hello, hello. What do you want to do?"]
         package.callback(random.choice(greets))
 
+    def is_complete(self):
+        """Complete immediately the conversation."""
+        return True
+
 
 def count_bulls_cows(challenge, number):
-    """Counts bulls and cows."""
+    """Count bulls and cows."""
     bulls = 0
     cows = 0
     for i, guess in enumerate(challenge):
@@ -55,9 +63,11 @@ class Games(Interface):
     complete = False
 
     def is_complete(self):
+        """Return if conversation is complete."""
         return self.complete
 
-    def consume(self, package):
+    def consume(self, context, package):
+        """Take latest text from user and process it."""
         if "game" not in package.conversation.data:
             self.get_game(package)
         else:
@@ -71,7 +81,9 @@ class Games(Interface):
             "bulls & cows": "bull_game",
             "yes": "bull_game",
         }
-        game = process.extractOne(package.message.text.lower(), games.keys())
+        game = process.extractOne(
+            package.conversation.messages[-1].text.lower(), games.keys()
+        )
         if game[1] >= 95:
             package.conversation.data["game"] = games[game[0]]
             package.callback("OK. Let's play bulls and cows")
@@ -82,7 +94,7 @@ class Games(Interface):
     def bull_game(self, package):
         """Play a number guessing game."""
         if "bull_number" in package.conversation.data:
-            number = str(package.message.text)
+            number = package.last_message_text
             if len(number) != 4:
                 package.callback(Message("Give number with exactly 4 digits"))
             elif len(set(number)) != len(number):

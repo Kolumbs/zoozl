@@ -23,9 +23,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.6529083"
-     inkscape:cx="325.46684"
-     inkscape:cy="-35.992803"
+     inkscape:zoom="1.3058166"
+     inkscape:cx="516.53502"
+     inkscape:cy="315.12848"
      inkscape:window-width="1920"
      inkscape:window-height="1029"
      inkscape:window-x="0"
@@ -126,19 +126,19 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="fill:#b3ff80;stroke:#000000;stroke-width:0.281001;stroke-dasharray:0.281001, 0.843004"
+       style="fill:#b3ff80;stroke:#000000;stroke-width:0.305391;stroke-dasharray:0.305391, 0.916175"
        id="rect24754"
-       width="119.1783"
-       height="89.744522"
-       x="46.11129"
-       y="28.58218" />
+       width="119.15391"
+       height="106.02157"
+       x="46.123486"
+       y="28.594376" />
     <rect
-       style="fill:#fff6d5;stroke:#000000;stroke-width:0.264999;stroke-dasharray:0.264999, 0.794996"
+       style="fill:#fff6d5;stroke:#000000;stroke-width:0.283996;stroke-dasharray:0.283996, 0.851988"
        id="rect14399"
-       width="50.987488"
-       height="77.614647"
-       x="52.324257"
-       y="37.773144" />
+       width="50.968491"
+       height="89.174904"
+       x="52.333755"
+       y="37.782642" />
     <rect
        style="fill:#fff6d5;stroke:#000000;stroke-width:0.264999;stroke-dasharray:0.264999, 0.794996"
        id="rect47"
@@ -236,6 +236,13 @@
        height="12.000773"
        x="61.299431"
        y="89.804619" />
+    <rect
+       style="fill:#fff6d5;stroke:#000000;stroke-width:0.264999;stroke-dasharray:0.264999, 0.794996"
+       id="rect47-3-5-7"
+       width="30.649494"
+       height="12.000773"
+       x="61.483013"
+       y="109.66552" />
     <text
        xml:space="preserve"
        style="font-size:4.9389px;line-height:0.25;font-family:Sahadeva;-inkscape-font-specification:Sahadeva;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
@@ -247,6 +254,17 @@
          style="stroke-width:0.264583"
          x="69.862076"
          y="97.321434">email</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.9389px;line-height:0.25;font-family:Sahadeva;-inkscape-font-specification:Sahadeva;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+       x="70.082146"
+       y="117.15565"
+       id="text6049-6-3-5"><tspan
+         sodipodi:role="line"
+         id="tspan6047-7-5-3"
+         style="stroke-width:0.264583"
+         x="70.082146"
+         y="117.15565">slack</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-start:url(#Arrow1Lstart);marker-end:url(#Arrow1Lend)"
        d="m 156.74327,75.403664 h 17.214"
@@ -270,5 +288,16 @@
          style="stroke-width:0.264583"
          x="147.08464"
          y="34.221004">zoozl</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.9389px;line-height:0.25;font-family:Sahadeva;-inkscape-font-specification:Sahadeva;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+       x="82.226784"
+       y="42.876347"
+       id="text29018-3"><tspan
+         sodipodi:role="line"
+         id="tspan29016-6"
+         style="stroke-width:0.264583"
+         x="82.226784"
+         y="42.876347">channels</tspan></text>
   </g>
 </svg>

@@ -8,7 +8,7 @@ from .server import start
 
 
 def get_conf(path):
-    """Returns dict object as configuration."""
+    """Return dict object as configuration."""
     conf = {}
     if path:
         with open(path, "rb") as fname:

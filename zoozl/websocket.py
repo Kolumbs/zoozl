@@ -1,5 +1,4 @@
-"""
-Module that allows to interact with websocket frames
+"""Module that allows to interact with websocket frames.
 
 Note on implementation:
     -> Fragmentation not supported
@@ -17,13 +16,11 @@ FIN = "8"  # Starting nibble of frame in hex string
 
 
 def apply_mask(data, mask):
-    """
-    Apply masking to the data of a WebSocket message.
+    """Apply masking to the data of a WebSocket message.
 
     Args:
         data: data to mask.
         mask: 4-bytes mask.
-
     """
     if len(mask) != 4:
         raise ValueError("mask must contain 4 bytes")
@@ -35,14 +32,14 @@ def apply_mask(data, mask):
 
 @dataclass
 class Frame:
-    """Websocket data frame"""
+    """Websocket data frame."""
 
     op_code: str
     data: bytes = b""
 
 
 class OpCodes(enum.Enum):
-    """Op codes into hex nibbles"""
+    """Op codes into hex nibbles."""
 
     TEXT = "1"
     BINARY = "2"
@@ -52,9 +49,7 @@ class OpCodes(enum.Enum):
 
 
 def get_frame(op_code, payload):
-    """
-    encode binary payload as per op_code into correct frame
-    """
+    """Encode binary payload as per op_code into correct frame."""
     code = OpCodes[op_code].value
     frame = bytearray.fromhex(f"{FIN}{code}")
     length = len(payload)
@@ -66,9 +61,7 @@ def get_frame(op_code, payload):
 
 
 def read_frame(socket):
-    """
-    read one frame from socket
-    """
+    """Read one frame from socket."""
     data = socket.recv(1)
     if len(data) == 0:
         # Here should better response something like close without notice
@@ -102,7 +95,7 @@ def read_frame(socket):
 
 
 def handshake(webkey):
-    """Give bytes object for valid websocket handshake"""
+    """Give bytes object for valid websocket handshake."""
     magic_uuid = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
     webkey = webkey.encode() + magic_uuid
     hasher = hashlib.sha1()

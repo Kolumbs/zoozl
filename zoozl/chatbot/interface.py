@@ -1,188 +1,246 @@
 """Main chat interface that external modules interact with.
 
+>>> # callback is a function that accepts bot responses
 >>> def callback(message):
         print(message.text)
->>> bot = chat.Chat("unique_talker_id", callback)
+>>> # root is the interface for chatbot to use to understand what to talk about
+>>> root = chat.InterfaceRoot()
+>>> root.load()
+>>> # start unique conversation with a person
+>>> bot = chat.Chat("unique_talker_id", callback, root)
 >>> bot.greet()
 >>> bot.ask(chat.Message("Hello"))
->>> bot.close() # Important to call this, to close any resources opened related to memory
+>>> root.close() # Important to call this, to close any resources opened
 """
 
 import importlib
+import logging
+
 import membank
-from rapidfuzz import process
 
-from .api import Interface, Message, Conversation, Package
+from . import embeddings, api
 
 
-# pylint: disable=too-many-instance-attributes, too-many-arguments
-class Chat:
-    """Interface for communication and routing with talker."""
+log = logging.getLogger(__name__)
 
-    def __init__(self, talker, callback, conf=None, path=None):
-        """Initialise comm interface with talker, one instance per talker.
 
-        Talker must be something unique. This will serve as
-        identification across several talkers that might turn to bot for
-        chat.
+class InterfaceRoot:
+    """Interface root for chatbot to use.
 
-        Callback must be a callable that accepts Message as only
-        argument
+    Holds all possible commands and options chatbot can do.
 
-        Conf is dictionary containing configuration for any additional
-        extensions to be loaded and also possibly configurations to
-        those extensions.
+    Must be always initialised before use:
+    >>> root = InterfaceRoot(memory)
+    >>> root.load()
+    >>> root.close()
+    """
 
-        If path is not set, Chat instance will hold memories of ongoing
-        chats with talker only in the instance itself, closing instance
-        will render all previous conversations forgotten. In such cases
-        Chat instance per talker should be kept alive as long as
-        possible. if path is set, it must lead to valid path for Chat
-        instance to be able to store it's persistent memory, then
-        history of talker conversations will be preserved upon instance
-        destructions.
+    def __init__(self, conf=None):
+        """Configure with memory and configuration.
+
+        :param conf: dictionary that holds all configuration for all Interfaces. If
+            memory_path is not set, Root instance will hold memories of ongoing chats
+            with talker only in the instance itself, closing instance will render all
+            previous conversations forgotten. In such cases Root instance per talker
+            should be kept alive as long as possible. if path is set, it must lead to
+            valid path for Root instance to be able to store it's persistent memory,
+            then history of talker conversations will be preserved upon instance
+            destructions.
         """
-        self._m = membank.LoadMemory(path)
-        self._t = self._m.get.conversation(talker=str(talker))
-        if not self._t:
-            self._t = Conversation(
-                talker=str(talker),
-            )
-        self._callback = callback
-        self._conf = conf if conf else {}
         self._commands = {}
-        if "extensions" in self._conf:
-            for i in self._conf["extensions"]:
-                self.load_interface(i)
-        self._conf["zoozl.plugins.helpers"] = {"interfaces": self._commands}
-        self.load_interface(
-            "zoozl.plugins.helpers"
-        )  # built-in default interface always added
+        self.conf = (
+            conf
+            if conf
+            else {
+                "extensions": ["zoozl.plugins.helpers"],
+            }
+        )
+        self.lookup = None
+        self.loaded = False
+        self.memory = None
+
+    def load(self):
+        """Load interface map with available plugins and embedder."""
+        self.memory = membank.LoadMemory()
+        if "embedder" in self.conf:
+            self.lookup = embeddings.Lookup(self.memory, self.conf["embedder"])
+        else:
+            self.lookup = embeddings.Lookup(self.memory, embeddings.CharEmbedder())
+        if "extensions" in self.conf:
+            for interface in self.conf["extensions"]:
+                extension = importlib.import_module(interface)
+                for i in dir(extension):
+                    ext = getattr(extension, i)
+                    if isinstance(ext, type) and issubclass(ext, api.Interface):
+                        obj = ext()
+                        for cmd in obj.aliases:
+                            if cmd in self._commands:
+                                raise RuntimeError(
+                                    f"Clash of interfaces! '{cmd}' already loaded"
+                                )
+                            self._commands[cmd] = obj
+        # Load default command handlers, if not loaded by plugins
+        if "cancel" not in self._commands:
+            log.warning("No cancel command found in plugins.")
+            self._commands["cancel"] = api.Interface()
+        if "greet" not in self._commands:
+            log.warning("No greet command found in plugins.")
+            self._commands["greet"] = api.Interface()
+        if "help" not in self._commands:
+            log.warning("No help command found in plugins.")
+            self._commands["help"] = api.Interface()
+        self.loaded = True
 
     def close(self):
         """When membank supports close this should close it."""
         # self._m.close()
 
+    def consume(self, package, subject=None):
+        """Route the package object to appropriate chat interface.
+
+        :params package: a package object that contains data
+        :params subject: optional subject, otherwise taken from package
+        """
+        subject = package.conversation.subject if subject is None else subject
+        if subject not in self._commands:
+            raise RuntimeError(f"There is no subject '{subject}' available.")
+        self._commands[subject].consume(self, package)
+
+    def is_subject_complete(self, cmd):
+        """Check if subject is complete."""
+        return self._commands[cmd].is_complete()
+
+    def cancel(self, package):
+        """Cancel the subject if needed."""
+        self.consume(package, "cancel")
+
+    def greet(self, package):
+        """Greet the user, if any plugin has defined it."""
+        self.consume(package, "greet")
+
+    def get_embedding(self, text):
+        """Get embedding of the text."""
+        return self.lookup.get(text)
+
+    def get_interface_embeddings(self):
+        """Return list of cmds and their embedding values."""
+        if not self.loaded:
+            raise RuntimeError("Interface map not loaded.")
+        return [(cmd, self.get_embedding(cmd)) for cmd in self._commands]
+
+
+def get_new_package(talker):
+    """Return new Package object given talker.
+
+    :params talker: unique identifier on talker for the conversation
+    """
+    return api.Conversation(talker=str(talker))
+
+
+class Chat:
+    """Interface for communication and routing with talker."""
+
+    def __init__(self, talker, callback, interface_root):
+        """Initialise comm interface with talker, one instance per talker.
+
+        Talker must be something unique. This will serve as identification across
+        several talkers that might turn to bot for chat.
+
+        Callback must be a callable that accepts Message as only argument
+
+        Interface_root is object that allows routing of messages to correct interfaces
+        for the talker.
+        """
+        if not interface_root.loaded:
+            raise RuntimeError("InterfaceRoot must be in loaded state!")
+        self._root = interface_root
+        self._callback = callback
+        self._set_package(str(talker))
+
+    def _set_package(self, talker):
+        """Set package on the object."""
+        conversation = self._root.memory.get.conversation(talker=talker, ongoing=True)
+        if not conversation:
+            conversation = api.Conversation(talker=talker)
+        self._package = api.Package(conversation, self._call)
+
     def greet(self):
         """Send first greeting message."""
-        if self.ongoing:
-            self._call("Hey. What would you like me to do?")
-        else:
-            msg = "Hello!"
-            self._call(msg)
-            msg = "I can do few things. Ask me for example "
-            msg += "to play games or something."
-            self._call(msg)
-            self.ongoing = True
+        self._root.greet(self._package)
 
     def ask(self, message):
-        """Make conversation by receiving text and sending message back via
-        callback."""
-        if self.ongoing:
-            if self.subject:
-                self.do_subject(message)
-            else:
-                if not self.get_subject(message):
-                    self._call(
-                        "I didn't get. Would you like me to send full list of commands?"
-                    )
-                    self.set_subject("do get help")
-                else:
-                    self.do_subject(message)
+        """Make conversation by receiving text and sending message back to callback."""
+        self.ongoing = True
+        if self.subject:
+            self.do_subject(message)
         else:
-            self.ongoing = True
             if not self.get_subject(message):
-                self._call("What would you like me to do?")
-            else:
-                self.do_subject(message)
+                self.set_subject("help")
+            self.do_subject(message)
 
     @property
     def talker(self):
-        """Returns talker."""
-        return self._t.talker
+        """Return talker."""
+        return self._package.conversion.talker
 
     @property
     def ongoing(self):
-        """Checks if talk is ongoing."""
-        return self._t.ongoing
+        """Check if talk is ongoing."""
+        return self._package.conversation.ongoing
 
     @ongoing.setter
     def ongoing(self, value):
-        """Sets talk ongoing value."""
-        self._t.ongoing = value
-        self._m.put(self._t)
+        """Set talk ongoing value."""
+        self._package.conversation.ongoing = value
+        self._root.memory.put(self._package.conversation)
 
     @property
     def subject(self):
         """Return subject if present."""
-        return self._t.subject
-
-    def load_interface(self, interface):
-        """Load additional supported commands into chat interface."""
-        extension = importlib.import_module(interface)
-        for i in dir(extension):
-            obj = getattr(extension, i)
-            if isinstance(obj, type) and issubclass(obj, Interface):
-                if interface in self._conf:
-                    conf = self._conf[interface]
-                else:
-                    conf = {}
-                obj = obj(conf)
-                for cmd in obj.aliases:
-                    if cmd in self._commands:
-                        raise RuntimeError(
-                            f"Clash of interfaces! '{cmd}' already loaded"
-                        )
-                    self._commands[cmd] = obj
+        return self._package.conversation.subject
 
     def get_subject(self, message):
-        """Tries to understand subject from message if understood sets the
-        subject and returns it otherwise returns None."""
-        pos = process.extractOne(message.text.lower(), self._commands.keys())
-        message.text = ""  # So that next consumer does not have it
-        if pos and pos[1] >= 90:
-            self.set_subject(pos[0])
-            return pos[0]
+        """Try to understand subject from message.
+
+        if understood sets the subject and returns it otherwise returns None.
+        """
+        x = self._root.get_embedding(message.text)
+        for cmd, e in self._root.get_interface_embeddings():
+            eq = embeddings.get_cosine_similarity(x, e)
+            if eq > 0.8:
+                self.set_subject(cmd)
+                return cmd
         return None
 
     def set_subject(self, cmd):
-        """Sets subject as per cmd."""
-        self._t.subject = cmd
-        self._m.put(self._t)
+        """Set subject as per cmd."""
+        self._package.conversation.subject = cmd
+        self._root.memory.put(self._package.conversation)
 
     def clear_subject(self):
-        """Resets conversation to new start."""
-        self._call("OK. Let's start over.")
+        """Reset conversation to new start."""
         self._clean()
 
     def do_subject(self, message):
-        """Continue on the subject."""
-        if self._positive(message.text):
-            package = Package(message, self._t, self._call)
-            self._commands[self._t.subject].consume(package)
-            self._m.put(package.conversation)
-        if self._t.subject and self._commands[self._t.subject].is_complete():
-            self._clean()
+        """Start or continue on the subject."""
+        self._package.conversation.messages.append(message)
+        if not self._root.cancel(self._package):
+            self._root.consume(self._package)
+            self._root.memory.put(self._package.conversation)
+        if self.subject and self._root.is_subject_complete(self.subject):
+            self.clear_subject()
 
     def _call(self, message):
-        """Constructs Message and routes it to callback It must be either
-        simple string text or Message object."""
-        if not isinstance(message, Message):
-            message = Message(message)
-        self._callback(message)
+        """Construct Message and route it to callback.
 
-    def _positive(self, text):
-        """Assert that text seems positive otherwise cancels the subject."""
-        choices = ["no", "cancel", "stop", "stop it", "forget", "start again", "naah"]
-        pos = process.extractOne(text, choices)
-        if pos[1] > 97:
-            self.clear_subject()
-            return False
-        return True
+        It must be either simple string text or Message object.
+        """
+        if not isinstance(message, api.Message):
+            message = api.Message(message)
+        self._callback(message)
 
     def _clean(self):
         """Clean all data in conversation to initial state."""
-        self._t.subject = ""
-        self._t.attachment = b""
-        self._t.data = {}
-        self._m.put(self._t)
+        self._package.conversation.ongoing = False
+        self._root.memory.put(self._package.conversation)
+        self._set_package(self._package.conversation.talker)

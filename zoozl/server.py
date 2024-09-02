@@ -9,13 +9,12 @@ import sys
 from zoozl import websocket, chatbot
 
 
-log = logging.getLogger("zoozl")
+log = logging.getLogger(__name__)
 
 
 # pylint: disable=invalid-name
 def tcp_line(sock):
-    """Consume first TCP line if valid HTTP then return method, request-uri
-    tuple."""
+    """Consume first TCP line if valid HTTP then return method, request-uri tuple."""
     block = sock.recv(1)
     if block == b"\r":
         block = sock.recv(1)
@@ -41,6 +40,9 @@ class ZoozlBot(socketserver.StreamRequestHandler):
     """TCP server that listens on port for Zoozl bot calls."""
 
     def handle(self):
+        """Handle any request from external source."""
+        if not self.server.root.loaded:
+            self.server.root.load()
         try:
             response = tcp_line(
                 self.request
@@ -60,7 +62,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
             bot = chatbot.Chat(
                 self.client_address,
                 self.send_message,
-                conf=self.server.conf,
+                self.server.root,
             )
             bot.greet()
             while True:
@@ -95,7 +97,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
 
     def send_message(self, message):
         """Send back message."""
-        packet = {"author": self.server.conf["author"], "text": message.text}
+        packet = {"author": self.server.root.conf["author"], "text": message.text}
         packet = json.dumps(packet)
         log.debug("Sending: %s", packet)
         self.request.send(websocket.get_frame("TEXT", packet.encode()))
@@ -105,12 +107,13 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     """TCP server running on threads."""
 
     def __init__(self, address, mixer, conf):
-        self.conf = conf
+        """Initialise root object of the chatbot."""
+        self.root = chatbot.InterfaceRoot(conf)
         socketserver.TCPServer.__init__(self, address, mixer)
 
 
 def start(port, conf):
-    """Starts listening on given port."""
+    """Start listening on given port."""
     with ThreadedTCPServer(("", port), ZoozlBot, conf) as server:
         log.info("Server started listening on port: %s", port)
         sys.stdout.flush()
