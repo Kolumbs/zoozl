@@ -20,5 +20,5 @@ zoozl package contains modules that handle various input interfaces like websock
 
 
 ## Plugin
-TODO: Describe plugin interface and creation
-TODO: Add authentication and authorization interaction between chatbot and plugin
+*TODO: Describe plugin interface and creation
+*TODO: Add authentication and authorization interaction between chatbot and plugin
