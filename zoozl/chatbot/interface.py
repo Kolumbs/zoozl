@@ -73,6 +73,7 @@ class InterfaceRoot:
                     ext = getattr(extension, i)
                     if isinstance(ext, type) and issubclass(ext, api.Interface):
                         obj = ext()
+                        obj.load(self)
                         for cmd in obj.aliases:
                             if cmd in self._commands:
                                 raise RuntimeError(
