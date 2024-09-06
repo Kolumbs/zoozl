@@ -12,16 +12,19 @@ import websockets
 
 
 # pylint: disable=no-member,bad-classmethod-argument
-class Server(unittest.IsolatedAsyncioTestCase):
+class AbstractServer(unittest.IsolatedAsyncioTestCase):
     """Test that server responds to websocket request."""
+
+    config_file = "tests/data/conf.toml"
 
     @classmethod
     def setUpClass(self):
+        """Boot up server to listen on websocket."""
         port = time.time() % 100
         port = int(port) + 3000
         args = ["env/bin/python", "-m", "zoozl", str(port)]
         args.append("--conf")
-        args.append("tests/data/conf.toml")
+        args.append(self.config_file)
         self.port = port
         # pylint: disable=consider-using-with
         self.proc = subprocess.Popen(args)
@@ -31,11 +34,12 @@ class Server(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def tearDownClass(self):
+        """Safely tear down server."""
         self.proc.terminate()
         self.proc.wait()
 
     async def assert_answer(self, websocket, text, timeout=3):
-        """Checks for answer."""
+        """Check for answer."""
         try:
             async with asyncio.timeout(timeout):
                 result = await websocket.recv()
@@ -44,6 +48,10 @@ class Server(unittest.IsolatedAsyncioTestCase):
         result = json.loads(result)
         self.assertEqual(result, {"author": "Zoozl", "text": text})
         return result
+
+
+class SimpleServer(AbstractServer):
+    """Simple test cases on server receiving and sending over websocket."""
 
     async def test(self):
         """Call an open socket."""
@@ -64,3 +72,16 @@ class Server(unittest.IsolatedAsyncioTestCase):
         websocket = await websockets.connect(f"ws://localhost:{self.port}")
         await websocket.send("Ā")
         await websocket.recv()
+
+
+class LongText(AbstractServer):
+    """Handling long text messages."""
+
+    config_file = "tests/data/ping.toml"
+
+    async def test_long_text(self):
+        """Send and receive long text."""
+        text = "A" * 256
+        websocket = await websockets.connect(f"ws://localhost:{self.port}")
+        await websocket.send(f'{{"text": "{text}"}}')
+        await self.assert_answer(websocket, text)

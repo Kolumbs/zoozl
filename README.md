@@ -23,7 +23,7 @@ zoozl package contains modules that handle various input interfaces like websock
 
 ### Mimimal setup
 
-1. Add in toml configuration
+1. Create new toml configuration file (e.g. myconfig.toml)
 ```
 extensions = ['my_plugin_module']
 ```
@@ -40,6 +40,9 @@ class MyPlugin(Interface):
         package.callback("Hello this is my plugin response")
 ```
 4. Start zoozl server with your configuration file and asking to bot `call myplugin` it will respond `Hello this is my plugin response`
+```bash
+python -m zoozl 1601 --conf myconfig.toml
+```
 
 ### Configuration file
 

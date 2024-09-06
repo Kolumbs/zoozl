@@ -53,9 +53,13 @@ def get_frame(op_code, payload):
     code = OpCodes[op_code].value
     frame = bytearray.fromhex(f"{FIN}{code}")
     length = len(payload)
-    if length > 125:
-        raise RuntimeError("unsupported length")
-    frame += length.to_bytes(1, byteorder="big")
+    if length <= 125:
+        frame += length.to_bytes(1, byteorder="big")
+    elif length <= 32767:
+        frame += int(126).to_bytes(1, byteorder="big")
+        frame += length.to_bytes(2, byteorder="big")
+    else:
+        raise RuntimeError("unsupported length {length}")
     frame += payload
     return frame
 
@@ -75,9 +79,15 @@ def read_frame(socket):
     length = data & 0b01111111
     if not data & 0b10000000:
         raise RuntimeError("Client must send frames masked")
-    mask = socket.recv(4)
     if length >= 126:
-        raise RuntimeError("Extended payload unsupported")
+        if length == 126:
+            length = socket.recv(2)
+            # Most significant bit MUST be zero
+            length = int.from_bytes(length, byteorder="big")
+        else:
+            length = socket.recv(8)
+            raise RuntimeError("Handle 127 byte lenght order")
+    mask = socket.recv(4)
     data = socket.recv(length)
     data = apply_mask(data, mask)
     if op_code == 9:
