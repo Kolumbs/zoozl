@@ -61,7 +61,7 @@ class InterfaceRoot:
 
     def load(self):
         """Load interface map with available plugins and embedder."""
-        self.memory = membank.LoadMemory()
+        self.memory = membank.LoadMemory(self.conf.get("memory_path", {}))
         if "embedder" in self.conf:
             self.lookup = embeddings.Lookup(self.memory, self.conf["embedder"])
         else:

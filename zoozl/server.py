@@ -5,6 +5,7 @@ import json
 import logging
 import socketserver
 import sys
+import uuid
 
 from zoozl import websocket, chatbot
 
@@ -60,7 +61,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
                 return
             self.request.send(websocket.handshake(headers["Sec-WebSocket-Key"]))
             bot = chatbot.Chat(
-                self.client_address,
+                str(uuid.uuid4()),
                 self.send_message,
                 self.server.root,
             )
@@ -68,7 +69,7 @@ class ZoozlBot(socketserver.StreamRequestHandler):
             while True:
                 frame = websocket.read_frame(self.request)
                 if frame.op_code == "TEXT":
-                    log.debug("Asking: %s", frame.data.decode())
+                    log.info("Asking: %s", frame.data.decode())
                     msg = {}
                     try:
                         msg = json.loads(frame.data.decode())

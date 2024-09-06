@@ -1,5 +1,6 @@
 title = "Global configuration for Chatbot"
 extensions = ["chatbot_fifa_extension", "zoozl.plugins.greeter"]
+memory_path = "sqlite://tests/tmp/maindb"
 
 [chatbot_fifa_extension]
 database_path = "tests/tmp"

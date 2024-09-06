@@ -85,3 +85,15 @@ class LongText(AbstractServer):
         websocket = await websockets.connect(f"ws://localhost:{self.port}")
         await websocket.send(f'{{"text": "{text}"}}')
         await self.assert_answer(websocket, text)
+
+
+class ManyConnects(AbstractServer):
+    """Connect to sockets multiple times."""
+
+    async def test(self):
+        """Try connecting multiple times."""
+        async with websockets.connect(f"ws://localhost:{self.port}") as websocket:
+            await websocket.send('{"text": "Ābece"}')
+        async with websockets.connect(f"ws://localhost:{self.port}") as websocket:
+            await websocket.send('{"text": "Ābece"}')
+            await websocket.send('{"text": "Hello"}')
