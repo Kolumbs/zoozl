@@ -113,8 +113,12 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         socketserver.TCPServer.__init__(self, address, mixer)
 
 
-def start(port, conf):
+def start(conf: dict) -> None:
     """Start listening on given port."""
+    port = conf.get("websocket_port")
+    if not port:
+        log.warning("Websocket port number not provided")
+        return
     with ThreadedTCPServer(("", port), ZoozlBot, conf) as server:
         log.info("Server started listening on port: %s", port)
         sys.stdout.flush()

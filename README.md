@@ -50,6 +50,7 @@ Configuration file must conform to TOML format. Example of configuration:
 ```
 title = "Global configuration for Chatbot"
 extensions = ["chatbot_fifa_extension", "zoozl.plugins.greeter"]
+websocket_port = 80
 
 [chatbot_fifa_extension]
 database_path = "tests/tmp"

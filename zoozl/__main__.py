@@ -40,4 +40,6 @@ if __name__ == "__main__":
         logging.basicConfig(level=10)
     else:
         logging.basicConfig(level=20)
-    start(args.port, get_conf(args.conf))
+    conf = get_conf(args.conf)
+    conf["websocket_port"] = args.port
+    start(conf)
