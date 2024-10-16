@@ -3,12 +3,12 @@
 Extension module should contain as a minimum one subclass of Interface
 """
 
+from abc import abstractmethod
 import base64
 import datetime
-import uuid
-
 import dataclasses
 from dataclasses import dataclass
+import uuid
 
 
 @dataclass
@@ -135,6 +135,7 @@ class Interface:
         :params root: interface root object
         """
 
+    @abstractmethod
     def consume(self, context, package):
         """Handle all requests when subject is triggered.
 

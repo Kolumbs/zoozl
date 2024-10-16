@@ -71,10 +71,14 @@ class ZoozlBot(socketserver.StreamRequestHandler):
                 if frame.op_code == "TEXT":
                     log.info("Asking: %s", frame.data.decode())
                     msg = {}
+                    txt = frame.data.decode()
                     try:
-                        msg = json.loads(frame.data.decode())
+                        msg = json.loads(txt)
                     except json.decoder.JSONDecodeError:
-                        log.info("Invalid json format: %s", frame.data.decode())
+                        log.warning(
+                            "User sent message with invalid json format: %s", txt
+                        )
+                        self.send_error(f"Invalid JSON format '{txt}'")
                     if "text" in msg:
                         bot.ask(chatbot.Message(msg["text"]))
                 elif frame.op_code == "CLOSE":
@@ -96,12 +100,20 @@ class ZoozlBot(socketserver.StreamRequestHandler):
         """Send pong frame."""
         self.request.send(websocket.get_frame("PONG", data))
 
-    def send_message(self, message):
-        """Send back message."""
-        packet = {"author": self.server.root.conf["author"], "text": message.text}
+    def send_packet(self, packet):
+        """Send packet."""
         packet = json.dumps(packet)
         log.debug("Sending: %s", packet)
         self.request.send(websocket.get_frame("TEXT", packet.encode()))
+
+    def send_message(self, message):
+        """Send back message."""
+        packet = {"author": self.server.root.conf["author"], "text": message.text}
+        self.send_packet(packet)
+
+    def send_error(self, txt):
+        """Send error message."""
+        self.send_packet({"error": txt})
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):

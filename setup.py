@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
     setuptools.setup(
         name="zoozl",
-        version="0.1.1",
+        version="0.1.2",
         author="Juris Kaminskis",
         author_email="juris@kolumbs.net",
         description="Zoozl services for chatbots",

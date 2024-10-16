@@ -44,20 +44,30 @@ class MyPlugin(Interface):
 python -m zoozl 1601 --conf myconfig.toml
 ```
 
+### Plugin interface
+
+Plugin must implement `consume` method that takes two arguments `context` and `package`. `context` is a dictionary that contains information about the current chatbot state and `package` is a `Package` object that contains input message and callback method to send response back to the user.
+
+Plugin may define `aliases` attribute that is a tuple of strings that are used to call the plugin. If `aliases` is not defined, plugin will not be called. Aliases are like commands that user can call to interact with the plugin, however those commands are constructed as embeddings and then compared with input message embeddings to find the best match.
+
+Special aliases are help, cancel and greet. Help aliases is used when there is no matching aliases found in plugins, cancel alias is used to cancel current conversation and release it from current plugin handling, greet alias is called immediately before any user message is handled.
+
+If there is only one plugin expected, then aliases most likely should contain all three special aliases, thus plugin will be as soon as connection is made and everytime user asks anything.
+
 ### Configuration file
 
 Configuration file must conform to TOML format. Example of configuration:
 ```
-title = "Global configuration for Chatbot"
 extensions = ["chatbot_fifa_extension", "zoozl.plugins.greeter"]
-websocket_port = 80
+websocket_port = 80  # if not provided, server will not listen to websocket requests
+author = "my_chatbot_name"  # default is zoozl
 
-[chatbot_fifa_extension]
+[chatbot_fifa_extension]  # would be considered as specific configuration for plugin
 database_path = "tests/tmp"
 administrator = "admin"
 ```
 
-Root objects like title, extensions are configuration options for chatbot system wide setup, you can pass unlimited objects in configuration, however suggested is to add a component for each plugin and separate those within components.
+Root objects like author, extensions are configuration options for chatbot system wide setup, you can pass unlimited objects in configuration, however suggested is to add a component for each plugin and separate those within components.
 
 
 * TODO: Describe plugin interface and creation
