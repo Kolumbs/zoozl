@@ -42,8 +42,6 @@ class ZoozlBot(socketserver.StreamRequestHandler):
 
     def handle(self):
         """Handle any request from external source."""
-        if not self.server.root.loaded:
-            self.server.root.load()
         try:
             response = tcp_line(
                 self.request
@@ -81,6 +79,8 @@ class ZoozlBot(socketserver.StreamRequestHandler):
                         self.send_error(f"Invalid JSON format '{txt}'")
                     if "text" in msg:
                         bot.ask(chatbot.Message(msg["text"]))
+                    else:
+                        self.send_error("Missing 'text' key in JSON")
                 elif frame.op_code == "CLOSE":
                     self.send_close(frame.data)
                     break
@@ -119,9 +119,9 @@ class ZoozlBot(socketserver.StreamRequestHandler):
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     """TCP server running on threads."""
 
-    def __init__(self, address, mixer, conf):
+    def __init__(self, address, mixer, interface_root: chatbot.InterfaceRoot):
         """Initialise root object of the chatbot."""
-        self.root = chatbot.InterfaceRoot(conf)
+        self.root = interface_root
         socketserver.TCPServer.__init__(self, address, mixer)
 
 
@@ -131,7 +131,13 @@ def start(conf: dict) -> None:
     if not port:
         log.warning("Websocket port number not provided")
         return
-    with ThreadedTCPServer(("", port), ZoozlBot, conf) as server:
-        log.info("Server started listening on port: %s", port)
-        sys.stdout.flush()
-        server.serve_forever()
+    root = chatbot.InterfaceRoot(conf)
+    root.load()
+    try:
+        with ThreadedTCPServer(("", port), ZoozlBot, root) as server:
+            log.info("Server started listening on port: %s", port)
+            sys.stdout.flush()
+            server.serve_forever()
+    finally:
+        root.close()
+        log.info("Server closed")

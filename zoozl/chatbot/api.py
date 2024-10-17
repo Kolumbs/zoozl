@@ -57,6 +57,11 @@ class Message:
         """Return text part of the message."""
         return " ".join([part.text for part in self.parts])
 
+    @property
+    def files(self):
+        """Return files."""
+        return [(part.binary, part.media_type) for part in self.parts if part.binary]
+
 
 def encode_messages(messages):
     """Encode messages."""
@@ -111,11 +116,22 @@ class Package:
     callback: type
 
     @property
+    def last_message(self):
+        """Retrieve latest message from conversation."""
+        if self.conversation.messages:
+            return self.conversation.messages[-1]
+
+    @property
     def last_message_text(self):
         """Retrieve latest text from conversation."""
         if self.conversation.messages:
             last_message = self.conversation.messages[-1]
             return last_message.text
+
+    @property
+    def talker(self):
+        """Return talker."""
+        return self.conversation.talker
 
 
 class Interface:

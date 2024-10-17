@@ -82,9 +82,9 @@ class LongText(AbstractServer):
     async def test_long_text(self):
         """Send and receive long text."""
         text = "A" * 256
-        websocket = await websockets.connect(f"ws://localhost:{self.port}")
-        await websocket.send(f'{{"text": "{text}"}}')
-        await self.assert_answer(websocket, text)
+        async with websockets.connect(f"ws://localhost:{self.port}") as websocket:
+            await websocket.send(f'{{"text": "{text}"}}')
+            await self.assert_answer(websocket, text)
 
 
 class ManyConnects(AbstractServer):
