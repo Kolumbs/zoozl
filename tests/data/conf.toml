@@ -1,6 +1,6 @@
-title = "Global configuration for Chatbot"
 extensions = ["chatbot_fifa_extension", "zoozl.plugins.greeter"]
 memory_path = "sqlite://tests/tmp/maindb"
+websocket_port = 30000
 
 [chatbot_fifa_extension]
 database_path = "tests/tmp"

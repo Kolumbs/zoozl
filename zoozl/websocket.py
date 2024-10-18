@@ -64,9 +64,9 @@ def get_frame(op_code, payload):
     return frame
 
 
-def read_frame(socket):
-    """Read one frame from socket."""
-    data = socket.recv(1)
+async def read_frame(reader):
+    """Read one frame from reader."""
+    data = await reader.read(1)
     if len(data) == 0:
         # Here should better response something like close without notice
         return Frame("CLOSE", b"\x03\xe8")
@@ -75,20 +75,21 @@ def read_frame(socket):
     if not fin:
         raise RuntimeError("Frames fragmentation unsupported")
     op_code = data & 0b00001111
-    data = socket.recv(1)[0]
+    data = await reader.read(1)
+    data = data[0]
     length = data & 0b01111111
     if not data & 0b10000000:
         raise RuntimeError("Client must send frames masked")
     if length >= 126:
         if length == 126:
-            length = socket.recv(2)
+            length = await reader.readexactly(2)
             # Most significant bit MUST be zero
             length = int.from_bytes(length, byteorder="big")
         else:
-            length = socket.recv(8)
-            raise RuntimeError("Handle 127 byte lenght order")
-    mask = socket.recv(4)
-    data = socket.recv(length)
+            length = await reader.readexactly(8)
+            raise RuntimeError("Handle 127 byte length order")
+    mask = await reader.readexactly(4)
+    data = await reader.readexactly(length)
     data = apply_mask(data, mask)
     if op_code == 9:
         new_frame = Frame("PING", data)

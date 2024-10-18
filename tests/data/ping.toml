@@ -1,1 +1,2 @@
 extensions = ["zoozl.plugins.pong"]
+websocket_port = 30001

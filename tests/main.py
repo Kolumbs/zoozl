@@ -1,53 +1,22 @@
 """Main test on websocket server."""
 
-import asyncio
-import json
-import subprocess
-import time
-import unittest
+import socket
 import urllib.error
 import urllib.request
 
 import websockets
 
+from tests._zoozl_server import AbstractServer, configure_server, terminate_server
 
-# pylint: disable=no-member,bad-classmethod-argument
-class AbstractServer(unittest.IsolatedAsyncioTestCase):
-    """Test that server responds to websocket request."""
 
-    config_file = "tests/data/conf.toml"
+def setUpModule():
+    """Boot zoozl server in background."""
+    configure_server()
 
-    @classmethod
-    def setUpClass(self):
-        """Boot up server to listen on websocket."""
-        port = time.time() % 100
-        port = int(port) + 3000
-        args = ["env/bin/python", "-m", "zoozl", str(port)]
-        args.append("--conf")
-        args.append(self.config_file)
-        self.port = port
-        # pylint: disable=consider-using-with
-        self.proc = subprocess.Popen(args)
-        time.sleep(2)  # Let the process start
-        if self.proc.poll():
-            raise RuntimeError("Process unexpectedly terminated")
 
-    @classmethod
-    def tearDownClass(self):
-        """Safely tear down server."""
-        self.proc.terminate()
-        self.proc.wait()
-
-    async def assert_answer(self, websocket, text, timeout=3):
-        """Check for answer."""
-        try:
-            async with asyncio.timeout(timeout):
-                result = await websocket.recv()
-        except TimeoutError:
-            self.fail(f"Waited to receive {text} for longer than {timeout} seconds")
-        result = json.loads(result)
-        self.assertEqual(result, {"author": "Zoozl", "text": text})
-        return result
+def tearDownModule():
+    """Terminate zoozl server."""
+    terminate_server()
 
 
 class SimpleServer(AbstractServer):
@@ -56,35 +25,22 @@ class SimpleServer(AbstractServer):
     async def test(self):
         """Call an open socket."""
         greet = "Hello!"
-        async with websockets.connect(f"ws://localhost:{self.port}") as websocket:
+        async with websockets.connect(f"ws://localhost:{self.ws_port}") as websocket:
             await self.assert_answer(websocket, greet)
             await websocket.send("Ābece")
             pong = await websocket.ping()
             await pong
         with self.assertRaises(urllib.error.HTTPError) as catch:
-            with urllib.request.urlopen(f"http://localhost:{self.port}"):
+            with urllib.request.urlopen(f"http://localhost:{self.ws_port}"):
                 pass
         self.assertEqual(400, catch.exception.status)
-        self.assertIn("Missing Sec-WebSocket-Key header", catch.exception.reason)
+        self.assertIn("Bad Request", catch.exception.reason)
 
     async def test_crash(self):
         """Close socket abruptly."""
-        websocket = await websockets.connect(f"ws://localhost:{self.port}")
+        websocket = await websockets.connect(f"ws://localhost:{self.ws_port}")
         await websocket.send("Ā")
         await websocket.recv()
-
-
-class LongText(AbstractServer):
-    """Handling long text messages."""
-
-    config_file = "tests/data/ping.toml"
-
-    async def test_long_text(self):
-        """Send and receive long text."""
-        text = "A" * 256
-        async with websockets.connect(f"ws://localhost:{self.port}") as websocket:
-            await websocket.send(f'{{"text": "{text}"}}')
-            await self.assert_answer(websocket, text)
 
 
 class ManyConnects(AbstractServer):
@@ -92,8 +48,39 @@ class ManyConnects(AbstractServer):
 
     async def test(self):
         """Try connecting multiple times."""
-        async with websockets.connect(f"ws://localhost:{self.port}") as websocket:
+        async with websockets.connect(f"ws://localhost:{self.ws_port}") as websocket:
             await websocket.send('{"text": "Ābece"}')
-        async with websockets.connect(f"ws://localhost:{self.port}") as websocket:
+        async with websockets.connect(f"ws://localhost:{self.ws_port}") as websocket:
             await websocket.send('{"text": "Ābece"}')
             await websocket.send('{"text": "Hello"}')
+
+
+class WebsocketErrors(AbstractServer):
+    """Negative test cases for connecting to websocket server."""
+
+    def test_buffers(self):
+        """Send too large buffer."""
+        self.assert_error("A" * 2**20, 501)
+        self.assert_error("GET", 408)
+        self.assert_error("GET " + "A" * 2**20, 414)
+        self.assert_error("GET / HTTP/1.1", 408)
+        self.assert_error("GET / HTTP/1.1\r\n\r\n\r\n", 400)
+
+    def test_timeout(self):
+        """Lock server into timeout while kill connection."""
+        try:
+            self.assert_error("GET", 408, timeout=1)
+        except TimeoutError:
+            pass
+        self.assert_error("GET", 408)
+
+    def assert_error(self, message: str, status: int, timeout=5):
+        """Check for error."""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect(("localhost", self.ws_port))
+        sock.send(message.encode("ascii"))
+        try:
+            self.assertIn(str(status), sock.recv(4056).decode("ascii"))
+        finally:
+            sock.close()

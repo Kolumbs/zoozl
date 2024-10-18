@@ -33,6 +33,8 @@ class InterfaceRoot:
     >>> root = InterfaceRoot(memory)
     >>> root.load()
     >>> root.close()
+
+    Methods apart from load() are to be considered thread safe
     """
 
     def __init__(self, conf=None):

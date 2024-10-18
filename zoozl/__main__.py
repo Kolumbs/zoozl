@@ -21,11 +21,6 @@ def get_conf(path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Zoozl hub of services")
     parser.add_argument(
-        "port",
-        type=int,
-        help="port number to use for service",
-    )
-    parser.add_argument(
         "-v",
         action="store_true",
         help="enable verbose debugging mode",
@@ -35,11 +30,16 @@ if __name__ == "__main__":
         type=str,
         help="path for configuration",
     )
+    parser.add_argument(
+        "--force-bind",
+        action="store_true",
+        help="bind to port even if it is already in use",
+    )
     args = parser.parse_args()
     if args.v:
         logging.basicConfig(level=10)
     else:
         logging.basicConfig(level=20)
     conf = get_conf(args.conf)
-    conf["websocket_port"] = args.port
+    conf["force_bind"] = args.force_bind
     start(conf)
