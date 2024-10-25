@@ -61,6 +61,9 @@ Configuration file must conform to TOML format. Example of configuration:
 extensions = ["chatbot_fifa_extension", "zoozl.plugins.greeter"]
 websocket_port = 80  # if not provided, server will not listen to websocket requests
 author = "my_chatbot_name"  # defaults to empty string
+slack_port = 8080  # if not provided, server will not listen to slack requests
+slack_app_token = "xoxb-12333" # Mandatory if slack_port is provided, oAuth token for slack app to send requests to slack
+slack_signing_secret = "abc123" # Mandatory if slack_port is provided, secret key to verify requests from slack
 
 [chatbot_fifa_extension]  # would be considered as specific configuration for plugin
 database_path = "tests/tmp"

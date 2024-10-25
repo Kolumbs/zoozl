@@ -2,7 +2,8 @@ extensions = ["chatbot_fifa_extension", "zoozl.plugins.greeter", "zoozl.plugins.
 memory_path = "sqlite://tests/tmp/maindb"
 websocket_port = 30000
 slack_port = 30001
-slack_secret = "ABC"
+slack_signing_secret = "ABC"
+slack_app_token = "xoxb-123"
 
 [chatbot_fifa_extension]
 database_path = "tests/tmp"

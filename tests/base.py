@@ -43,10 +43,16 @@ class ConfigurationMethods:
         return self.config["slack_port"]
 
     @property
-    def slack_secret(self):
+    def slack_signing_secret(self):
         """Return slack secret."""
-        self.validate_configuration_key("slack_secret")
-        return self.config["slack_secret"]
+        self.validate_configuration_key("slack_signing_secret")
+        return self.config["slack_signing_secret"]
+
+    @property
+    def slack_app_token(self):
+        """Return slack token."""
+        self.validate_configuration_key("slack_app_token")
+        return self.config["slack_app_token"]
 
     @property
     def author(self):
@@ -61,7 +67,9 @@ class SlackMethods:
     def get_slack_signature(self, body: bytes, timestamp: str):
         """Return slack signature."""
         stamp = b"v0:" + timestamp.encode("ascii") + b":" + body
-        hasher = hmac.new(self.slack_secret.encode("ascii"), stamp, digestmod="sha256")
+        hasher = hmac.new(
+            self.slack_signing_secret.encode("ascii"), stamp, digestmod="sha256"
+        )
         return "v0=" + hasher.hexdigest()
 
     def send_slack_event(self, body: dict):

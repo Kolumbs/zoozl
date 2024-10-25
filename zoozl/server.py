@@ -494,7 +494,7 @@ class SlackHandler(RequestHandler):
         if not await msg.read_body():
             return
         if self.valid_slack_request(
-            writer, msg.headers, msg.body, self.root.conf["slack_secret"]
+            writer, msg.headers, msg.body, self.root.conf["slack_signing_secret"]
         ):
             try:
                 body = json.loads(msg.body)
@@ -516,7 +516,7 @@ class SlackHandler(RequestHandler):
                 body = body["event"]
                 if body["type"] == "message" and "bot_id" not in body:
                     if "user" in body:
-                        slack_token = self.root.conf["slack_secret"]
+                        slack_token = self.root.conf["slack_app_token"]
                         channel = body["channel"]
                         bot = chatbot.Chat(
                             body["user"],
@@ -614,8 +614,10 @@ async def build_servers(root: chatbot.Interface, conf: dict):
             )
         )
     if conf.get("slack_port"):
-        if conf.get("slack_secret") is None:
+        if conf.get("slack_signing_secret") is None:
             log.error("Slack secret not set, disabling slack server")
+        elif conf.get("slack_app_token") is None:
+            log.error("Slack app token not set, disabling slack server")
         else:
             servers.append(
                 await build_slack_server(root, conf["slack_port"], force_bind)

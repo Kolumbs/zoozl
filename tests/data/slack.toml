@@ -1,5 +1,6 @@
 extensions = ["zoozl.plugins.pong"]
 memory_path = "sqlite://tests/tmp/maindb"
 slack_port = 30002
-slack_secret = "SLACKSECRET123"
+slack_signing_secret = "ABC"
+slack_app_token = "xoxb-123"
 author = "Zoozleer"

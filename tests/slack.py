@@ -22,7 +22,7 @@ class Pong(bs.AbstractSlack):
         mock_send_slack.assert_called_once()
         self.assert_slack_called_with(
             mock_send_slack,
-            self.slack_secret,
+            self.slack_app_token,
             payload["event"]["channel"],
             Message(text, author=self.author),
         )
