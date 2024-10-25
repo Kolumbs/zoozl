@@ -13,8 +13,6 @@ def get_conf(path):
     if path:
         with open(path, "rb") as fname:
             conf = tomllib.load(fname)
-    if "author" not in conf:
-        conf["author"] = "Zoozl"
     return conf
 
 

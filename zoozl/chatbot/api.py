@@ -11,6 +11,22 @@ from dataclasses import dataclass
 import uuid
 
 
+def encode_array(lst):
+    """Encode array of dataclasses."""
+    return [encode_class(i) for i in lst]
+
+
+def encode_class(cls):
+    """Encode dataclass."""
+    result = {}
+    for i in dataclasses.fields(cls):
+        if i.metadata.get("encode"):
+            result[i.name] = i.metadata["encode"](getattr(cls, i.name))
+        else:
+            result[i.name] = getattr(cls, i.name)
+    return result
+
+
 @dataclass
 class MessagePart:
     """Contains one single atomic communication piece between talker and bot.
@@ -23,6 +39,20 @@ class MessagePart:
         default=b"", metadata={"encode": lambda x: base64.b64encode(x).decode()}
     )
     media_type: str = ""  # e.g text/plain, image/jpeg, application/json
+    filename: str = ""
+
+    def __post_init__(self):
+        """Decode binary data."""
+        if isinstance(self.binary, str):
+            self.binary = base64.b64decode(self.binary)
+        if not isinstance(self.text, str):
+            raise ValueError(f"`{self.text}` must be a string.")
+        if not isinstance(self.binary, bytes):
+            raise ValueError("Binary must be bytes.")
+        if not isinstance(self.media_type, str):
+            raise ValueError(f"`{self.media_type}` must be a string.")
+        if not isinstance(self.filename, str):
+            raise ValueError(f"`{self.filename}` must be a string.")
 
 
 @dataclass
@@ -35,7 +65,7 @@ class Message:
 
     parts: list = dataclasses.field(
         default_factory=list,
-        metadata={"encode": lambda x: [encode_class(i) for i in x]},
+        metadata={"encode": encode_array},
     )
     author: str = ""
     sent: datetime = dataclasses.field(
@@ -48,7 +78,9 @@ class Message:
         if isinstance(self.parts, str):
             self.parts = [MessagePart(self.parts)]
         else:
-            self.parts = [MessagePart(part) for part in self.parts]
+            self.parts = [
+                MessagePart(**i) if isinstance(i, dict) else i for i in self.parts
+            ]
         if isinstance(self.sent, str):
             self.sent = datetime.datetime.fromisoformat(self.sent)
 
@@ -61,22 +93,6 @@ class Message:
     def files(self):
         """Return files."""
         return [(part.binary, part.media_type) for part in self.parts if part.binary]
-
-
-def encode_messages(messages):
-    """Encode messages."""
-    return [encode_class(i) for i in messages]
-
-
-def encode_class(message):
-    """Encode dataclass."""
-    result = {}
-    for i in dataclasses.fields(message):
-        if i.metadata.get("encode"):
-            result[i.name] = i.metadata["encode"](getattr(message, i.name))
-        else:
-            result[i.name] = getattr(message, i.name)
-    return result
 
 
 @dataclass
@@ -92,7 +108,7 @@ class Conversation:
     ongoing: bool = False
     subject: str = ""
     messages: list = dataclasses.field(
-        default_factory=list, metadata={"encode": encode_messages}
+        default_factory=list, metadata={"encode": encode_array}
     )
     data: dict = dataclasses.field(default_factory=dict)
 
@@ -100,6 +116,8 @@ class Conversation:
         """Generate uuid automatically if not provided."""
         if not self.uuid:
             self.uuid = str(uuid.uuid4())
+        if self.messages and isinstance(self.messages[0], dict):
+            self.messages = [Message(**i) for i in self.messages]
 
 
 @dataclass

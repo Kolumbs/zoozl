@@ -13,5 +13,5 @@ class PingPong(Interface):
 
     def consume(self, context, package):
         """Send always back whatever received."""
-        package.conversation.subject = "greet"
+        package.conversation.subject = "help"
         package.callback(package.last_message_text)

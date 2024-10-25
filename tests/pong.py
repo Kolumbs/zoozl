@@ -2,21 +2,24 @@
 
 import websockets
 
-from tests._zoozl_server import AbstractServer, configure_server, terminate_server
+from tests import base as bs
+from tests.fixtures.zoozl_server import configure, terminate
 
 
 def setUpModule():
     """Boot zoozl server in background."""
-    configure_server("tests/data/ping.toml")
+    configure("tests/data/ping.toml")
 
 
 def tearDownModule():
     """Terminate zoozl server."""
-    terminate_server()
+    terminate()
 
 
-class LongText(AbstractServer):
+class LongText(bs.AbstractServer):
     """Handling long text messages."""
+
+    config_file = "tests/data/ping.toml"
 
     async def test_long_text(self):
         """Send and receive long text."""

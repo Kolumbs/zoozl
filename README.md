@@ -9,9 +9,9 @@ For basic example a chatbot plugin is provided in `zoozl.plugins` package. It is
 ### Run websocket server
 
 ```bash
-python -m zoozl 1601 --conf chatbot.toml
+python -m zoozl --conf chatbot.toml
 ```
-where `1601` is the port number and `chatbot.toml` is optional configuration file.
+where `chatbot.toml` is configuration file.
 
 ## Architecture
 
@@ -41,16 +41,16 @@ class MyPlugin(Interface):
 ```
 4. Start zoozl server with your configuration file and asking to bot `call myplugin` it will respond `Hello this is my plugin response`
 ```bash
-python -m zoozl 1601 --conf myconfig.toml
+python -m zoozl --conf myconfig.toml
 ```
 
 ### Plugin interface
 
-Plugin must implement `consume` method that takes two arguments `context` and `package`. `context` is a dictionary that contains information about the current chatbot state and `package` is a `Package` object that contains input message and callback method to send response back to the user.
+Plugin must implement `consume` method that takes two arguments `context` and `package`. `context` is a InterfaceRoot object that contains information about the current chatbot state and `package` is a `Package` object that contains input message and callback method to send response back to the user.
 
 Plugin may define `aliases` attribute that is a tuple of strings that are used to call the plugin. If `aliases` is not defined, plugin will not be called. Aliases are like commands that user can call to interact with the plugin, however those commands are constructed as embeddings and then compared with input message embeddings to find the best match.
 
-Special aliases are help, cancel and greet. Help aliases is used when there is no matching aliases found in plugins, cancel alias is used to cancel current conversation and release it from current plugin handling, greet alias is called immediately before any user message is handled.
+Special aliases are help, cancel and greet. Help alias is used when there is no matching aliases found in plugins, cancel alias is used to cancel current conversation and release it from current plugin handling, greet alias is called immediately before any user message is handled.
 
 If there is only one plugin expected, then aliases most likely should contain all three special aliases, thus plugin will be as soon as connection is made and everytime user asks anything.
 
@@ -60,7 +60,7 @@ Configuration file must conform to TOML format. Example of configuration:
 ```
 extensions = ["chatbot_fifa_extension", "zoozl.plugins.greeter"]
 websocket_port = 80  # if not provided, server will not listen to websocket requests
-author = "my_chatbot_name"  # default is zoozl
+author = "my_chatbot_name"  # defaults to empty string
 
 [chatbot_fifa_extension]  # would be considered as specific configuration for plugin
 database_path = "tests/tmp"

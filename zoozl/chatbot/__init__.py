@@ -7,8 +7,16 @@ Usage:
         With the api help classes extension modules are built
 """
 
-from .api import Interface, Message, Conversation, Package
+from .api import Interface, Message, Conversation, Package, MessagePart
 from .interface import Chat, InterfaceRoot
 
 
-__all__ = ["Chat", "Conversation", "Interface", "InterfaceRoot", "Message", "Package"]
+__all__ = [
+    "Chat",
+    "Conversation",
+    "Interface",
+    "InterfaceRoot",
+    "Message",
+    "Package",
+    "MessagePart",
+]

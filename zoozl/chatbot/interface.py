@@ -167,6 +167,10 @@ class Chat:
             conversation = api.Conversation(talker=talker)
         self._package = api.Package(conversation, self._call)
 
+    def _save_package(self):
+        """Save package to memory."""
+        self._root.memory.put(self._package.conversation)
+
     def greet(self):
         """Send first greeting message."""
         self._root.greet(self._package)
@@ -195,7 +199,7 @@ class Chat:
     def ongoing(self, value):
         """Set talk ongoing value."""
         self._package.conversation.ongoing = value
-        self._root.memory.put(self._package.conversation)
+        self._save_package()
 
     @property
     def subject(self):
@@ -218,7 +222,7 @@ class Chat:
     def set_subject(self, cmd):
         """Set subject as per cmd."""
         self._package.conversation.subject = cmd
-        self._root.memory.put(self._package.conversation)
+        self._save_package()
 
     def clear_subject(self):
         """Reset conversation to new start."""
@@ -229,7 +233,7 @@ class Chat:
         self._package.conversation.messages.append(message)
         if not self._root.cancel(self._package):
             self._root.consume(self._package)
-            self._root.memory.put(self._package.conversation)
+            self._save_package()
         if self.subject and self._root.is_subject_complete(self.subject):
             self.clear_subject()
 
@@ -240,10 +244,11 @@ class Chat:
         """
         if not isinstance(message, api.Message):
             message = api.Message(message)
+        message.author = self._root.conf.get("author", "")
         self._callback(message)
 
     def _clean(self):
         """Clean all data in conversation to initial state."""
         self._package.conversation.ongoing = False
-        self._root.memory.put(self._package.conversation)
+        self._save_package()
         self._set_package(self._package.conversation.talker)

@@ -1,18 +1,29 @@
-"""Zoozl server configuration."""
+"""Zoozl server process configuration.
 
-import asyncio
-import json
+Usage of this module is to configure and start zoozl server process.
+
+Example in test module to start zoozl server process:
+
+    ```python
+    from tests.fixtures import zoozl_server
+
+    def setUpModule():
+        zoozl_server.configure()
+
+    def tearDownModule():
+        zoozl_server.terminate()
+    ```
+"""
+
 import socket
 import subprocess
 import time
-import tomllib
-import unittest
 
+
+from tests import base as bs
 
 # Store server process
 ZOOZL_SERVER_PROCESS = None
-# Store configuration
-CONFIGURATION = None
 
 
 def socket_check(port, timeout=2):
@@ -34,14 +45,14 @@ def socket_check(port, timeout=2):
     raise AssertionError(f"Socket on port {port} did not open up within {timeout} secs")
 
 
-def terminate_server(error: str = ""):
+def terminate(error: str = ""):
     """Terminate zoozl server."""
     global ZOOZL_SERVER_PROCESS
     if ZOOZL_SERVER_PROCESS is None:
         raise RuntimeError("Server process not started, run `configure_server` first")
     ZOOZL_SERVER_PROCESS.terminate()
     try:
-        ZOOZL_SERVER_PROCESS.wait(timeout=1)
+        ZOOZL_SERVER_PROCESS.wait(timeout=6)
     except subprocess.TimeoutExpired:
         ZOOZL_SERVER_PROCESS.kill()
         ZOOZL_SERVER_PROCESS.wait()
@@ -55,11 +66,10 @@ def terminate_server(error: str = ""):
         print(stdout)
 
 
-def configure_server(config_file: str = "tests/data/conf.toml"):
+def configure(config_file: str = "tests/data/conf.toml"):
     """Set up server configuration and start server process."""
-    global ZOOZL_SERVER_PROCESS, CONFIGURATION
-    with open(config_file, "rb") as file:
-        CONFIGURATION = tomllib.load(file)
+    global ZOOZL_SERVER_PROCESS
+    conf = bs.load_configuration(config_file)
     args = ["env/bin/python", "-m", "zoozl", "--force-bind"]
     args.append("--conf")
     args.append(config_file)
@@ -67,29 +77,7 @@ def configure_server(config_file: str = "tests/data/conf.toml"):
         args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
     try:
-        if CONFIGURATION["websocket_port"]:
-            socket_check(CONFIGURATION["websocket_port"])
+        if conf["websocket_port"]:
+            socket_check(conf["websocket_port"])
     except Exception as e:
-        terminate_server(e)
-
-
-class AbstractServer(unittest.IsolatedAsyncioTestCase):
-    """Test that server responds to websocket request."""
-
-    async def assert_answer(self, websocket, text, timeout=3):
-        """Check for answer."""
-        try:
-            async with asyncio.timeout(timeout):
-                result = await websocket.recv()
-        except TimeoutError:
-            self.fail(f"Waited to receive {text} for longer than {timeout} seconds")
-        result = json.loads(result)
-        self.assertEqual(result, {"author": "Zoozl", "text": text})
-        return result
-
-    @property
-    def ws_port(self):
-        """Return websocket port."""
-        if CONFIGURATION is None:
-            raise RuntimeError("Please run `setUpModule` before accessing `ws_port`")
-        return CONFIGURATION["websocket_port"]
+        terminate(e)

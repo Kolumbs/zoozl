@@ -6,20 +6,21 @@ import urllib.request
 
 import websockets
 
-from tests._zoozl_server import AbstractServer, configure_server, terminate_server
+from tests import base as bs
+from tests.fixtures.zoozl_server import configure, terminate
 
 
 def setUpModule():
     """Boot zoozl server in background."""
-    configure_server()
+    configure()
 
 
 def tearDownModule():
     """Terminate zoozl server."""
-    terminate_server()
+    terminate()
 
 
-class SimpleServer(AbstractServer):
+class SimpleServer(bs.AbstractServer):
     """Simple test cases on server receiving and sending over websocket."""
 
     async def test(self):
@@ -43,7 +44,7 @@ class SimpleServer(AbstractServer):
         await websocket.recv()
 
 
-class ManyConnects(AbstractServer):
+class ManyConnects(bs.AbstractServer):
     """Connect to sockets multiple times."""
 
     async def test(self):
@@ -55,7 +56,7 @@ class ManyConnects(AbstractServer):
             await websocket.send('{"text": "Hello"}')
 
 
-class WebsocketErrors(AbstractServer):
+class WebsocketErrors(bs.AbstractServer):
     """Negative test cases for connecting to websocket server."""
 
     def test_buffers(self):
@@ -84,3 +85,17 @@ class WebsocketErrors(AbstractServer):
             self.assertIn(str(status), sock.recv(4056).decode("ascii"))
         finally:
             sock.close()
+
+
+class SlackServer(bs.SlackMethods, bs.AbstractServer):
+    """Testcase for slack services."""
+
+    def test_challenge(self):
+        """Test slack challenge request."""
+        my_challenge = "Ābece"
+        _, headers, body = self.send_challenge(my_challenge)
+        self.assertIn("Content-Type", headers)
+        self.assertIn("text/plain", headers["Content-Type"])
+        self.assertIn("Content-Length", headers)
+        self.assertEqual(len(body), int(headers["Content-Length"]))
+        self.assertEqual(body.decode("utf-8"), my_challenge)
