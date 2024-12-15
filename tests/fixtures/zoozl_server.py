@@ -15,34 +15,14 @@ Example in test module to start zoozl server process:
     ```
 """
 
-import socket
 import subprocess
-import time
 
 
 from tests import base as bs
+from tests.fixtures import network
 
 # Store server process
 ZOOZL_SERVER_PROCESS = None
-
-
-def socket_check(port, timeout=2):
-    """Check if socket is open on port for a given timeout in seconds.
-
-    Otherwise raise an exception.
-    """
-    time_left = timeout
-    while time_left > 0:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            sock.connect(("localhost", port))
-            return
-        except ConnectionRefusedError:
-            time.sleep(0.1)
-            time_left -= 0.1
-        finally:
-            sock.close()
-    raise AssertionError(f"Socket on port {port} did not open up within {timeout} secs")
 
 
 def terminate(error: str = ""):
@@ -78,6 +58,6 @@ def configure(config_file: str = "tests/data/conf.toml"):
     )
     try:
         if conf["websocket_port"]:
-            socket_check(conf["websocket_port"])
+            network.socket_check(conf["websocket_port"])
     except Exception as e:
         terminate(e)
