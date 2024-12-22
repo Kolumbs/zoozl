@@ -57,7 +57,10 @@ def configure(config_file: str = "tests/data/conf.toml"):
         args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
     try:
-        if conf["websocket_port"]:
+        if conf.get("websocket_port"):
             network.socket_check(conf["websocket_port"])
+        if conf.get("email_port"):
+            network.socket_check(conf["email_port"])
     except Exception as e:
-        terminate(e)
+        terminate()
+        raise e

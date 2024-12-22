@@ -64,6 +64,9 @@ author = "my_chatbot_name"  # defaults to empty string
 slack_port = 8080  # if not provided, server will not listen to slack requests
 slack_app_token = "xoxb-12333" # Mandatory if slack_port is provided, oAuth token for slack app to send requests to slack
 slack_signing_secret = "abc123" # Mandatory if slack_port is provided, secret key to verify requests from slack
+email_port = 8081  # if provided, server will listen to LMTP requests there
+email_address = "something@localhost"  # Mandatory if email_port is provided, email address to send back email messages to
+email_smtp_port = 25  # Optional port for sending out email messages to, defaults to 25
 
 [chatbot_fifa_extension]  # would be considered as specific configuration for plugin
 database_path = "tests/tmp"

@@ -35,3 +35,16 @@ async def send(
             txt += part.text
     mail.set_content(txt)
     await asyncio.to_thread(_send_email_msg, mail, port=port)
+
+
+def send_sync(sender: str, receiver: str, subject: str, msg: chatbot.Message, port=25):
+    """Send email message in sync mode."""
+    loop = asyncio.get_running_loop()
+    loop.create_task(send(sender, receiver, subject, msg, port))
+
+
+def serialise_email_message(msg: email.message.Message) -> chatbot.Message:
+    """Serialise email message into chatbot Message."""
+    for part in msg.walk():
+        if part.get_content_maintype() == "text":
+            return chatbot.Message(part.get_payload(decode=True).decode())

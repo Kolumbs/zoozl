@@ -10,6 +10,7 @@ Meant to be run in main python thread.
 
 from abc import abstractmethod
 import asyncio
+import email
 import functools
 import hmac
 import json
@@ -19,7 +20,10 @@ import time
 import traceback
 import uuid
 
-from zoozl import websocket, chatbot, slack
+from aiosmtpd.lmtp import LMTP
+from aiosmtpd.handlers import AsyncMessage
+
+from zoozl import websocket, chatbot, slack, emailer
 
 
 log = logging.getLogger(__name__)
@@ -558,6 +562,35 @@ class SlackHandler(RequestHandler):
         return True
 
 
+class EmailHandler(AsyncMessage):
+    """Handle incoming emails as LMTP server."""
+
+    def __init__(self, root: chatbot.InterfaceRoot):
+        """Initialise email handler."""
+        self.root = root
+        super().__init__()
+
+    async def handle_message(self, message: email.message.Message):
+        """Handle email message."""
+        re_subject = (
+            message["subject"]
+            if message["subject"].startswith("Re: ")
+            else f"Re: {message['subject']}"
+        )
+        bot = chatbot.Chat(
+            message["to"],
+            lambda msg: emailer.send_sync(
+                self.root.conf["email_address"],
+                message["from"],
+                re_subject,
+                msg,
+                self.root.conf["email_smtp_port"],
+            ),
+            self.root,
+        )
+        bot.ask(emailer.serialise_email_message(message))
+
+
 async def run_servers_stacked(shutdown_release: asyncio.Lock, *servers):
     """Run servers in stacked manner.
 
@@ -622,6 +655,19 @@ async def build_servers(root: chatbot.Interface, conf: dict):
             servers.append(
                 await build_slack_server(root, conf["slack_port"], force_bind)
             )
+    if conf.get("email_port"):
+        if conf.get("email_address") is None:
+            log.error("No email address of the bot set, disabling email server")
+        else:
+            loop = asyncio.get_running_loop()
+            servers.append(
+                await loop.create_server(
+                    functools.partial(LMTP, EmailHandler(root), loop=loop),
+                    host="localhost",
+                    port=conf["email_port"],
+                    reuse_port=force_bind,
+                )
+            )
     return servers
 
 
@@ -641,4 +687,6 @@ def start(conf: dict) -> None:
 
     We serve forever until interrupted or terminated.
     """
+    if "email_smtp_port" not in conf:
+        conf["email_smtp_port"] = 25
     asyncio.run(run(conf))
