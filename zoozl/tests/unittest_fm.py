@@ -1,7 +1,7 @@
 """Unittest framework test classes and functions."""
 
 import email.message
-from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock
 
 from zoozl import chatbot, emailer
@@ -46,13 +46,13 @@ class TestChatbot:
             raise AssertionError("Bot did not make any responses.") from None
         return self._callback.call_args.args[0]
 
-    def ask(self, *args, **kwargs):
+    async def ask(self, *args, **kwargs):
         """Ask bot."""
-        self.bot.ask(chatbot.Message(*args, **kwargs))
+        await self.bot.ask(chatbot.Message(*args, **kwargs))
 
-    def greet(self):
+    async def greet(self):
         """Receive greeting from bot."""
-        self.bot.greet()
+        await self.bot.greet()
 
     def total_messages_sent(self):
         """Return number of messages sent back to callback so far."""
@@ -89,12 +89,12 @@ class TestEmailbot(TestChatbot):
         )
         self._callback(mail)
 
-    def ask(self, msg: email.message.Message):
+    async def ask(self, msg: email.message.Message):
         """Ask bot."""
         self._subject = msg["subject"]
         self._sender = msg["from"]
         self._receiver = msg["to"]
-        self.bot.ask(emailer.serialise_email(msg))
+        return await self.bot.ask(emailer.serialise_email(msg))
 
     def last_text(self):
         """Return last received text message from callback."""
@@ -105,7 +105,7 @@ class TestEmailbot(TestChatbot):
         )
 
 
-class ChatbotUnittest(TestCase):
+class ChatbotUnittest(IsolatedAsyncioTestCase):
     """Unittest testcase that supports TestChatbot assert methods."""
 
     def setUp(self):

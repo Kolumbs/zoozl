@@ -431,7 +431,7 @@ class WebSocketHandler(RequestHandler):
             lambda x: self.send_message(writer, x),
             self.root,
         )
-        bot.greet()
+        await bot.greet()
         await writer.drain()
         while True:
             frame = await wait_for_response(
@@ -449,7 +449,7 @@ class WebSocketHandler(RequestHandler):
                     log.warning("User sent message with invalid json format: %s", txt)
                     self.send_error(writer, f"Invalid JSON format '{txt}'")
                 if "text" in msg:
-                    bot.ask(chatbot.Message(msg["text"]))
+                    await bot.ask(chatbot.Message(msg["text"]))
                 else:
                     self.send_error(writer, "Missing 'text' key in JSON")
             elif frame.op_code == "CLOSE":
@@ -534,7 +534,7 @@ class SlackHandler(RequestHandler):
                             body, slack_token
                         ):
                             parts.append(chatbot.MessagePart("", binary, file_type))
-                        bot.ask(chatbot.Message(parts=parts, author=body["user"]))
+                        await bot.ask(chatbot.Message(parts=parts, author=body["user"]))
 
     @staticmethod
     def valid_slack_request(writer, headers: dict, body: bytes, secret: bytes) -> bool:
@@ -584,7 +584,7 @@ class EmailHandler(AsyncMessage):
             ),
             self.root,
         )
-        bot.ask(emailer.serialise_email(message))
+        await bot.ask(emailer.serialise_email(message))
 
 
 async def run_servers_stacked(shutdown_release: asyncio.Lock, *servers):

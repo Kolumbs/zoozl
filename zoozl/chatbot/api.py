@@ -171,7 +171,7 @@ class Interface:
         """
 
     @abstractmethod
-    def consume(self, package):
+    async def consume(self, package):
         """Handle all requests when subject is triggered.
 
         :param context: InterfaceMap object that allows to communicate with other

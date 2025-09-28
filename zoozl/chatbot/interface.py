@@ -98,7 +98,7 @@ class InterfaceRoot:
         """When membank supports close this should close it."""
         # self._m.close()
 
-    def consume(self, package, subject=None):
+    async def consume(self, package, subject=None):
         """Route the package object to appropriate chat interface.
 
         :params package: a package object that contains data
@@ -107,19 +107,19 @@ class InterfaceRoot:
         subject = package.conversation.subject if subject is None else subject
         if subject not in self._commands:
             raise RuntimeError(f"There is no subject '{subject}' available.")
-        self._commands[subject].consume(package)
+        await self._commands[subject].consume(package)
 
     def is_subject_complete(self, cmd):
         """Check if subject is complete."""
         return self._commands[cmd].is_complete()
 
-    def cancel(self, package):
+    async def cancel(self, package):
         """Cancel the subject if needed."""
-        self.consume(package, "cancel")
+        await self.consume(package, "cancel")
 
-    def greet(self, package):
+    async def greet(self, package):
         """Greet the user, if any plugin has defined it."""
-        self.consume(package, "greet")
+        await self.consume(package, "greet")
 
     def get_embedding(self, text):
         """Get embedding of the text."""
@@ -171,19 +171,19 @@ class Chat:
         """Save package to memory."""
         self._root.memory.put(self._package.conversation)
 
-    def greet(self):
+    async def greet(self):
         """Send first greeting message."""
-        self._root.greet(self._package)
+        await self._root.greet(self._package)
 
-    def ask(self, message):
+    async def ask(self, message):
         """Make conversation by receiving text and sending message back to callback."""
         self.ongoing = True
         if self.subject:
-            self.do_subject(message)
+            await self.do_subject(message)
         else:
             if not self.get_subject(message):
                 self.set_subject("help")
-            self.do_subject(message)
+            await self.do_subject(message)
 
     @property
     def talker(self):
@@ -228,11 +228,11 @@ class Chat:
         """Reset conversation to new start."""
         self._clean()
 
-    def do_subject(self, message):
+    async def do_subject(self, message):
         """Start or continue on the subject."""
         self._package.conversation.messages.append(message)
-        if not self._root.cancel(self._package):
-            self._root.consume(self._package)
+        if not await self._root.cancel(self._package):
+            await self._root.consume(self._package)
             self._save_package()
         if self.subject and self._root.is_subject_complete(self.subject):
             self.clear_subject()
