@@ -41,6 +41,7 @@ HTTP_STATUS_CODES = (
     (403, "Forbidden"),
     (405, "Method Not Allowed"),
     (408, "Request Timeout"),
+    (411, "Length Required"),
     (414, "URI Too Long"),
     (500, "Internal Server Error"),
     (501, "Not Implemented"),
@@ -517,6 +518,8 @@ class SlackHandler(RequestHandler):
             else:
                 write_http_response(writer, 200)
             await writer.drain()
+            writer.close()
+            await writer.wait_closed()
             if "event" in body:
                 body = body["event"]
                 if body["type"] == "message" and "bot_id" not in body:
