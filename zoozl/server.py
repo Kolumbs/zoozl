@@ -337,8 +337,9 @@ async def wait_for_response(
     :param writer: writer to send error response to
     :param timeout: time to wait for coroutine to finish
     :param error_code: error code to send if coroutine times out
-    :param error_message: error message to send if coroutine times out Return coroutine
-        result if it finishes within timeout, otherwise return None.
+    :param error_message: error message to send if coroutine times out
+        Return coroutine result if it finishes within timeout, otherwise
+        return None.
     """
     try:
         return await asyncio.wait_for(coro, timeout)
@@ -572,23 +573,18 @@ class EmailHandler(AsyncMessage):
 
     async def handle_message(self, message: email.message.Message):
         """Handle email message."""
-        re_subject = (
-            message["subject"]
-            if message["subject"].startswith("Re: ")
-            else f"Re: {message['subject']}"
-        )
         bot = chatbot.Chat(
             message["to"],
             lambda msg: emailer.send_sync(
                 self.root.conf["email_address"],
                 message["from"],
-                re_subject,
+                message.get("subject", ""),
                 msg,
                 self.root.conf["email_smtp_port"],
             ),
             self.root,
         )
-        bot.ask(emailer.serialise_email_message(message))
+        bot.ask(emailer.serialise_email(message))
 
 
 async def run_servers_stacked(shutdown_release: asyncio.Lock, *servers):

@@ -1,9 +1,10 @@
 """Unittest framework test classes and functions."""
 
+import email.message
 from unittest import TestCase
 from unittest.mock import MagicMock
 
-from zoozl import chatbot
+from zoozl import chatbot, emailer
 
 
 class TestChatbot:
@@ -15,26 +16,25 @@ class TestChatbot:
     >>> bot.close()
     """
 
-    def __init__(self, conf=None):
+    def __init__(self):
         """Load object with callback and memory mocks."""
-        self._callback = None
-        self._memory = None
+        self._callback = MagicMock()
+        self._memory = MagicMock()
         self._interfaces = None
         self.bot = None
 
-    def load(self, conf=None):
+    def load(self, conf=None, callback=None):
         """Load test chatbot with optional configuration."""
-        self._callback = MagicMock()
-        self._memory = MagicMock()
+        callback = callback if callback is not None else self._callback
         self._interfaces = chatbot.InterfaceRoot(conf)
         self._interfaces.load()
-        self.bot = chatbot.Chat("caller", self._callback, self._interfaces)
+        self.bot = chatbot.Chat("caller", callback, self._interfaces)
 
     def close(self):
         """Close interface."""
         self._interfaces.close()
 
-    def last_call(self):
+    def last_text(self):
         """Return last received text message from callback."""
         return "\n".join(i.text for i in self.last_message().parts)
 
@@ -57,6 +57,52 @@ class TestChatbot:
     def total_messages_sent(self):
         """Return number of messages sent back to callback so far."""
         return self._callback.call_count
+
+
+class TestEmailbot(TestChatbot):
+    """Object that supports testing directly with chatbot through email.
+
+    >>> bot = TestEmailbot()
+    >>> bot.load()
+    >>> bot.ask()
+    >>> bot.close()
+
+    Object is not thread safe.
+    """
+
+    def __init__(self):
+        """Initialise variables."""
+        super().__init__()
+        self._sender = None
+        self._receiver = None
+        self._subject = None
+        self.received_emails = []
+
+    def load(self, conf=None):
+        """Load email chatbot compliant interface."""
+        super().load(conf, self.callback)
+
+    def callback(self, msg: chatbot.Message):
+        """Simulate email message sending."""
+        mail = emailer.deserialise_email(
+            self._sender, self._receiver, self._subject, msg
+        )
+        self._callback(mail)
+
+    def ask(self, msg: email.message.Message):
+        """Ask bot."""
+        self._subject = msg["subject"]
+        self._sender = msg["from"]
+        self._receiver = msg["to"]
+        self.bot.ask(emailer.serialise_email(msg))
+
+    def last_text(self):
+        """Return last received text message from callback."""
+        return next(
+            i.get_payload(decode=True).decode()
+            for i in self.last_message().walk()
+            if i.get_content_maintype() == "text"
+        )
 
 
 class ChatbotUnittest(TestCase):

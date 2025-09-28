@@ -17,7 +17,7 @@ class Help(Interface):
         "You can try to play games.",
     )
 
-    def consume(self, context, package):
+    def consume(self, package):
         """Try to help user."""
         package.callback(random.choice(self.helps))
 
@@ -31,7 +31,7 @@ class Hello(Interface):
 
     aliases = {"hello", "hi", "how are you", "hey"}
 
-    def consume(self, context, package):
+    def consume(self, package):
         """Greet the user."""
         greets = ["Hello", "Hey", "Hello, hello. What do you want to do?"]
         package.callback(random.choice(greets))
@@ -66,7 +66,7 @@ class Games(Interface):
         """Return if conversation is complete."""
         return self.complete
 
-    def consume(self, context, package):
+    def consume(self, package):
         """Take latest text from user and process it."""
         if "game" not in package.conversation.data:
             self.get_game(package)

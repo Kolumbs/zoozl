@@ -11,7 +11,7 @@ class PingPong(Interface):
 
     aliases = {"help"}
 
-    def consume(self, context, package):
+    def consume(self, package):
         """Send always back whatever received."""
         package.conversation.subject = "help"
         package.callback(package.last_message_text)

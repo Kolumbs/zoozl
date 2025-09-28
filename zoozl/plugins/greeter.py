@@ -8,7 +8,7 @@ class Greet(Interface):
 
     aliases = {"greet"}
 
-    def consume(self, context, package):
+    def consume(self, package):
         """Greet the user."""
         if package.conversation.ongoing:
             package.callback("Hey. What would you like me to do?")

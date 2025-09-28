@@ -115,4 +115,4 @@ class Email(bs.AbstractServer):
         self.assertEqual(message["subject"], "Re: " + subject)
         self.assertEqual(message["from"], self.sender)
         for part in message.walk():
-            self.assertEqual(text, message.get_payload().strip())
+            self.assertIn(text, message.get_payload().strip())

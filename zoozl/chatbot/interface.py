@@ -18,6 +18,8 @@ import logging
 
 import membank
 
+from zoozl import utils
+
 from . import embeddings, api
 
 
@@ -71,17 +73,15 @@ class InterfaceRoot:
         if "extensions" in self.conf:
             for interface in self.conf["extensions"]:
                 extension = importlib.import_module(interface)
-                for i in dir(extension):
-                    ext = getattr(extension, i)
-                    if isinstance(ext, type) and issubclass(ext, api.Interface):
-                        obj = ext()
-                        obj.load(self)
-                        for cmd in obj.aliases:
-                            if cmd in self._commands:
-                                raise RuntimeError(
-                                    f"Clash of interfaces! '{cmd}' already loaded"
-                                )
-                            self._commands[cmd] = obj
+                for ext in utils.load_from_module(extension, api.Interface):
+                    obj = ext()
+                    obj.load(self)
+                    for cmd in obj.aliases:
+                        if cmd in self._commands:
+                            raise RuntimeError(
+                                f"Clash of interfaces! '{cmd}' already loaded"
+                            )
+                        self._commands[cmd] = obj
         # Load default command handlers, if not loaded by plugins
         if "cancel" not in self._commands:
             log.warning("No cancel command found in plugins.")
@@ -107,7 +107,7 @@ class InterfaceRoot:
         subject = package.conversation.subject if subject is None else subject
         if subject not in self._commands:
             raise RuntimeError(f"There is no subject '{subject}' available.")
-        self._commands[subject].consume(self, package)
+        self._commands[subject].consume(package)
 
     def is_subject_complete(self, cmd):
         """Check if subject is complete."""

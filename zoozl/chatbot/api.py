@@ -145,6 +145,7 @@ class Package:
         if self.conversation.messages:
             last_message = self.conversation.messages[-1]
             return last_message.text
+        return ""
 
     @property
     def talker(self):
@@ -170,7 +171,7 @@ class Interface:
         """
 
     @abstractmethod
-    def consume(self, context, package):
+    def consume(self, package):
         """Handle all requests when subject is triggered.
 
         :param context: InterfaceMap object that allows to communicate with other
