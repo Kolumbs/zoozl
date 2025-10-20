@@ -34,8 +34,8 @@ def send_slack(slack_token: str, channel: str, message: Message):
     for part in message.parts:
         if part.binary:
             client = slack_sdk.WebClient(token=slack_token)
-            client.files_upload(
-                channels=channel,
+            client.files_upload_v2(
+                channel=channel,
                 title=part.text,
                 file=part.binary,
                 filename=part.filename,
