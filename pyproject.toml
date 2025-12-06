@@ -6,7 +6,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-version = "0.2.5"
+version = "0.2.6"
 name = "zoozl"
 authors = [{"name" = "Juris Kaminskis", "email" = "juris@kolumbs.net"}]
 readme = "README.md"
@@ -15,7 +15,7 @@ dependencies = [
     "aiosmtpd==1.4.6,<2",
     "membank>=0.5.5,<0.6",
     "scipy>=1.14.0,<2",
-    "openai>=1.43.1,<2",
+    "openai>=1.43.1",
     "rapidfuzz>=2.11.1,<3",
     "slack-sdk>=3.33.1,<4",
 ]
