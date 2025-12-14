@@ -40,6 +40,7 @@ class MessagePart:
     )
     media_type: str = ""  # e.g text/plain, image/jpeg, application/json
     filename: str = ""
+    consumed: bool = False
 
     def __post_init__(self):
         """Decode binary data."""
@@ -151,6 +152,16 @@ class Package:
     def talker(self):
         """Return talker."""
         return self.conversation.talker
+
+    def get_attachments(self, msg_count=1, consumed=None):
+        """Return attachments from last N messages."""
+        attachments = []
+        for message in self.conversation.messages[-msg_count:]:
+            for part in message.parts:
+                if part.binary:
+                    if consumed is None or part.consumed == consumed:
+                        attachments.append(part)
+        return attachments
 
 
 class Interface:
