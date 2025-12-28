@@ -15,10 +15,11 @@ def get_attachments(body, slack_token):
     """
     files = []
     for f_body in body.get("files", []):
-        file_type = f_body["filetype"]
+        file_type = f_body["mimetype"]
+        file_name = f_body["name"]
         fname = f_body["url_private_download"]
         binary = get_slack_file(fname, slack_token)
-        files.append((binary, file_type))
+        files.append((binary, file_type, file_name))
     return files
 
 

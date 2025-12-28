@@ -8,7 +8,6 @@ Meant to be run in main python thread.
 >>> start(conf)
 """
 
-from abc import abstractmethod
 import asyncio
 import email
 import functools
@@ -19,12 +18,12 @@ import signal
 import time
 import traceback
 import uuid
+from abc import abstractmethod
 
-from aiosmtpd.lmtp import LMTP
 from aiosmtpd.handlers import AsyncMessage
+from aiosmtpd.lmtp import LMTP
 
-from zoozl import websocket, chatbot, slack, emailer
-
+from zoozl import chatbot, emailer, slack, websocket
 
 log = logging.getLogger(__name__)
 
@@ -533,10 +532,12 @@ class SlackHandler(RequestHandler):
                         )
                         parts = []
                         parts.append(chatbot.MessagePart(body["text"]))
-                        for binary, file_type in slack.get_attachments(
+                        for binary, file_type, file_name in slack.get_attachments(
                             body, slack_token
                         ):
-                            parts.append(chatbot.MessagePart("", binary, file_type))
+                            parts.append(
+                                chatbot.MessagePart("", binary, file_type, file_name)
+                            )
                         await bot.ask(chatbot.Message(parts=parts, author=body["user"]))
 
     @staticmethod
