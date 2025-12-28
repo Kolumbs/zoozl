@@ -686,6 +686,7 @@ def start(conf: dict) -> None:
 
     We serve forever until interrupted or terminated.
     """
+    logging.basicConfig(level=conf.get("log_level", logging.WARNING))
     if "email_smtp_port" not in conf:
         conf["email_smtp_port"] = 25
     asyncio.run(run(conf))

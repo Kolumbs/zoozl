@@ -6,7 +6,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-version = "0.2.7"
+version = "0.2.8"
 name = "zoozl"
 authors = [{"name" = "Juris Kaminskis", "email" = "juris@kolumbs.net"}]
 readme = "README.md"
