@@ -67,6 +67,7 @@ class Operations:
         total_count = len(records)
         start = max(payload.page - 1, 0) * payload.page_size
         end = start + payload.page_size
+        records.sort(key=lambda x: x["date"], reverse=True)
         response = {
             "operation": payload.operation,
             "data": records[start:end],
