@@ -56,7 +56,7 @@ class Operations:
             for msg in messages:
                 records.append(
                     {
-                        "date": msg.sent,
+                        "date": msg.sent.isoformat(),
                         "user": msg.author,
                         "message": msg.text,
                         "response": talker,
