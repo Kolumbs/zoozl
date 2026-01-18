@@ -15,15 +15,86 @@
 
 import importlib
 import logging
+from typing import Callable, Literal
 
 import membank
+import pydantic
 
 from zoozl import utils
 
-from . import embeddings, api
-
+from . import api, embeddings
 
 log = logging.getLogger(__name__)
+
+
+class OperationPayload(pydantic.BaseModel):
+    """Schema for operation payload validation."""
+
+    operation: Literal["list_messages", "auth"]
+    page: int = 1
+    page_size: int = 10
+
+
+class Operations:
+    """Container for operations handling."""
+
+    def __init__(self, callback: Callable, memory, conf):
+        """Add operation handler with callback and memory."""
+        if not callable(callback):
+            raise TypeError("Operation callback must be callable.")
+        self.callback = callback
+        self.memory = memory
+        self.conf = conf
+
+    async def list_messages(self, payload: OperationPayload):
+        """Handle list_messages operation."""
+        items = self.memory.get("conversation")
+        records = []
+        bot_author = self.conf.get("author", "")
+        items = items or []
+        for conversation in items:
+            messages = conversation.messages
+            if not messages:
+                continue
+            talker = conversation.talker
+            status = conversation.data["status"]
+            idx = 0
+            while idx < len(messages):
+                msg = messages[idx]
+                author = msg.author
+                if bot_author and author == bot_author:
+                    idx += 1
+                    continue
+                text = msg.text
+                date = msg.sent.isoformat()
+                response_text = ""
+                if idx + 1 < len(messages):
+                    next_msg = messages[idx + 1]
+                    if bot_author and next_msg.author == bot_author:
+                        response_text = next_msg.text
+                        idx += 1
+                records.append(
+                    {
+                        "date": date,
+                        "user": author or talker or "",
+                        "message": text or "",
+                        "response": response_text or "",
+                        "status": status,
+                    }
+                )
+                idx += 1
+        total_count = len(records)
+        start = max(payload.page - 1, 0) * payload.page_size
+        end = start + payload.page_size
+        response = {
+            "operation": payload.operation,
+            "data": records[start:end],
+            "page": payload.page,
+            "page_size": payload.page_size,
+            "total_count": total_count,
+        }
+        self.callback(response)
+        return None
 
 
 class InterfaceRoot:
@@ -59,9 +130,11 @@ class InterfaceRoot:
                 "extensions": ["zoozl.plugins.helpers"],
             }
         )
+        self.operation_callback = self.conf.get("operation_callback", lambda x: None)
         self.lookup = None
         self.loaded = False
         self.memory = None
+        self.operations = None
 
     def load(self):
         """Load interface map with available plugins and embedder."""
@@ -70,6 +143,7 @@ class InterfaceRoot:
             self.lookup = embeddings.Lookup(self.memory, self.conf["embedder"])
         else:
             self.lookup = embeddings.Lookup(self.memory, embeddings.CharEmbedder())
+        self.operations = Operations(self.operation_callback, self.memory, self.conf)
         if "extensions" in self.conf:
             for interface in self.conf["extensions"]:
                 extension = importlib.import_module(interface)
@@ -130,6 +204,20 @@ class InterfaceRoot:
         if not self.loaded:
             raise RuntimeError("Interface map not loaded.")
         return [(cmd, self.get_embedding(cmd)) for cmd in self._commands]
+
+    async def handle_operation(self, payload, callback: Callable):
+        """Validate operation payload."""
+        if not isinstance(payload, dict):
+            raise TypeError("Operation payload must be a dict.")
+        if not callable(callback):
+            raise TypeError("Operation callback must be callable.")
+        data = OperationPayload.parse_obj(payload)
+        self.operations.callback = callback
+        handler = getattr(self.operations, data.operation, None)
+        if not callable(handler):
+            raise RuntimeError(f"Operation handler '{data.operation}' not found.")
+        await handler(data)
+        return None
 
 
 def get_new_package(talker):

@@ -450,6 +450,10 @@ class WebSocketHandler(RequestHandler):
                     self.send_error(writer, f"Invalid JSON format '{txt}'")
                 if "text" in msg:
                     await bot.ask(chatbot.Message(msg["text"]))
+                elif "operation" in msg:
+                    await self.root.handle_operation(
+                        msg, lambda x: self.send_packet(writer, x)
+                    )
                 else:
                     self.send_error(writer, "Missing 'text' key in JSON")
             elif frame.op_code == "CLOSE":
@@ -523,6 +527,7 @@ class SlackHandler(RequestHandler):
                 body = body["event"]
                 if body["type"] == "message" and "bot_id" not in body:
                     if "user" in body:
+                        log.debug("Received slack message: %s", body)
                         slack_token = self.root.conf["slack_app_token"]
                         channel = body["channel"]
                         bot = chatbot.Chat(
