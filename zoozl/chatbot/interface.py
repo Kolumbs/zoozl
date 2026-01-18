@@ -50,39 +50,19 @@ class Operations:
         """Handle list_messages operation."""
         items = self.memory.get("conversation")
         records = []
-        bot_author = self.conf.get("author", "")
-        items = items or []
         for conversation in items:
             messages = conversation.messages
-            if not messages:
-                continue
             talker = conversation.talker
-            status = conversation.data["status"]
-            idx = 0
-            while idx < len(messages):
-                msg = messages[idx]
-                author = msg.author
-                if bot_author and author == bot_author:
-                    idx += 1
-                    continue
-                text = msg.text
-                date = msg.sent.isoformat()
-                response_text = ""
-                if idx + 1 < len(messages):
-                    next_msg = messages[idx + 1]
-                    if bot_author and next_msg.author == bot_author:
-                        response_text = next_msg.text
-                        idx += 1
+            for msg in messages:
                 records.append(
                     {
-                        "date": date,
-                        "user": author or talker or "",
-                        "message": text or "",
-                        "response": response_text or "",
-                        "status": status,
+                        "date": msg.sent,
+                        "user": msg.author,
+                        "message": msg.text,
+                        "response": talker,
+                        "status": "completed",
                     }
                 )
-                idx += 1
         total_count = len(records)
         start = max(payload.page - 1, 0) * payload.page_size
         end = start + payload.page_size
@@ -94,7 +74,6 @@ class Operations:
             "total_count": total_count,
         }
         self.callback(response)
-        return None
 
 
 class InterfaceRoot:
