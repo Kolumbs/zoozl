@@ -407,12 +407,6 @@ class RequestHandler:
         :param root: must be already loaded
         """
         self.root = root
-        self._talker = None
-
-    @property
-    def talker(self):
-        """Return talker."""
-        return self._talker
 
     def is_auth_required(self) -> bool:
         """Return whether authentication is required for this handler."""
