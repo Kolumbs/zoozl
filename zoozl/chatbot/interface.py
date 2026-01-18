@@ -52,14 +52,13 @@ class Operations:
         records = []
         for conversation in items:
             messages = conversation.messages
-            talker = conversation.talker
             for msg in messages:
                 records.append(
                     {
                         "date": msg.sent.isoformat(),
-                        "user": msg.author,
+                        "user": conversation.talker,
                         "message": msg.text,
-                        "response": talker,
+                        "response": "not implemented",
                         "status": "completed",
                     }
                 )
