@@ -60,7 +60,7 @@ class Operations:
                         "date": msg.sent.isoformat(),
                         "user": conversation.talker,
                         "message": msg.text,
-                        "response": "not implemented",
+                        "response": "n/a",
                         "status": "completed",
                     }
                 )
