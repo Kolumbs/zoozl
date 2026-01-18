@@ -407,6 +407,16 @@ class RequestHandler:
         :param root: must be already loaded
         """
         self.root = root
+        self._talker = None
+
+    @property
+    def talker(self):
+        """Return talker."""
+        return self._talker
+
+    def is_auth_required(self) -> bool:
+        """Return whether authentication is required for this handler."""
+        return self.root.conf.get("auth_required", False)
 
     @abstractmethod
     async def handle(self, reader, writer):
@@ -426,41 +436,36 @@ class WebSocketHandler(RequestHandler):
             return
         writer.write(websocket.handshake(msg.headers["sec-websocket-key"]))
         await writer.drain()
+        if self.is_auth_required():
+            msg = await self.handle_data_frame(writer, reader)
+            if "auth" not in msg:
+                self.send_error(writer, "Missing 'auth' key in JSON")
+                await writer.drain()
+                return
+            await writer.drain()
+            talker = self.root.authenticate_token(msg["auth"])
+        else:
+            talker = str(uuid.uuid4())
+        await writer.drain()
         bot = chatbot.Chat(
-            str(uuid.uuid4()),
+            talker,
             lambda x: self.send_message(writer, x),
             self.root,
         )
         await bot.greet()
         await writer.drain()
         while True:
-            frame = await wait_for_response(
-                websocket.read_frame(reader),
-                writer,
-                timeout=300,
-            )
-            if frame.op_code == "TEXT":
-                log.info("Asking: %s", frame.data.decode())
-                msg = {}
-                txt = frame.data.decode()
-                try:
-                    msg = json.loads(txt)
-                except json.decoder.JSONDecodeError:
-                    log.warning("User sent message with invalid json format: %s", txt)
-                    self.send_error(writer, f"Invalid JSON format '{txt}'")
-                if "text" in msg:
-                    await bot.ask(chatbot.Message(msg["text"]))
-                elif "operation" in msg:
-                    await self.root.handle_operation(
-                        msg, lambda x: self.send_packet(writer, x)
-                    )
-                else:
-                    self.send_error(writer, "Missing 'text' key in JSON")
-            elif frame.op_code == "CLOSE":
-                self.send_close(writer, frame.data)
+            msg = await self.handle_data_frame(writer, reader)
+            if "break" in msg and msg["break"]:
                 break
-            elif frame.op_code == "PING":
-                self.send_pong(writer, frame.data)
+            elif "text" in msg:
+                await bot.ask(chatbot.Message(msg["text"]))
+            elif "operation" in msg:
+                await self.root.handle_operation(
+                    msg, lambda x: self.send_packet(writer, x)
+                )
+            else:
+                self.send_error(writer, "Missing 'text'/'operation' key in JSON")
             await writer.drain()
 
     @staticmethod
@@ -491,6 +496,30 @@ class WebSocketHandler(RequestHandler):
     def send_error(self, writer, txt):
         """Send error message."""
         self.send_packet(writer, {"error": txt})
+
+    async def handle_data_frame(self, writer, reader):
+        """Handle data frame."""
+        frame = await wait_for_response(
+            websocket.read_frame(reader),
+            writer,
+            timeout=300,
+        )
+        if frame.op_code == "TEXT":
+            log.info("Asking: %s", frame.data.decode())
+            txt = frame.data.decode()
+            try:
+                msg = json.loads(txt)
+            except json.decoder.JSONDecodeError:
+                log.warning("User sent message with invalid json format: %s", txt)
+                self.send_error(writer, f"Invalid JSON format '{txt}'")
+                return {"break": False}
+            return msg
+        elif frame.op_code == "CLOSE":
+            self.send_close(writer, frame.data)
+            return {"break": True}
+        elif frame.op_code == "PING":
+            self.send_pong(writer, frame.data)
+            return {"break": False}
 
 
 class SlackHandler(RequestHandler):

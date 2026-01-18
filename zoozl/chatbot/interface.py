@@ -13,7 +13,9 @@
 >>> root.close() # Important to call this, to close any resources opened
 """
 
+import base64
 import importlib
+import json
 import logging
 from typing import Callable, Literal
 
@@ -196,6 +198,22 @@ class InterfaceRoot:
             raise RuntimeError(f"Operation handler '{data.operation}' not found.")
         await handler(data)
         return None
+
+    def authenticate_token(self, auth):
+        """Extract email from JWT token without validation."""
+        if not isinstance(auth, dict):
+            raise TypeError("Auth payload must be a dict.")
+        token = auth.get("token")
+        if not isinstance(token, str):
+            raise TypeError("Auth token must be a string.")
+        parts = token.split(".")
+        if len(parts) < 2:
+            raise ValueError("Invalid JWT token format.")
+        payload_b64 = parts[1]
+        padding = "=" * (-len(payload_b64) % 4)
+        payload_json = base64.urlsafe_b64decode(payload_b64 + padding).decode("utf-8")
+        payload = json.loads(payload_json)
+        return payload.get("email")
 
 
 def get_new_package(talker):
