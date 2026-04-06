@@ -60,6 +60,36 @@ class ConfigurationMethods:
         self.validate_configuration_key("author")
         return self.config["author"]
 
+    @property
+    def whatsapp_port(self):
+        """Return whatsapp port."""
+        self.validate_configuration_key("whatsapp_port")
+        return self.config["whatsapp_port"]
+
+    @property
+    def whatsapp_verify_token(self):
+        """Return whatsapp verify token."""
+        self.validate_configuration_key("whatsapp_verify_token")
+        return self.config["whatsapp_verify_token"]
+
+    @property
+    def whatsapp_app_secret(self):
+        """Return whatsapp app secret."""
+        self.validate_configuration_key("whatsapp_app_secret")
+        return self.config["whatsapp_app_secret"]
+
+    @property
+    def whatsapp_access_token(self):
+        """Return whatsapp access token."""
+        self.validate_configuration_key("whatsapp_access_token")
+        return self.config["whatsapp_access_token"]
+
+    @property
+    def whatsapp_phone_number_id(self):
+        """Return whatsapp phone number ID."""
+        self.validate_configuration_key("whatsapp_phone_number_id")
+        return self.config["whatsapp_phone_number_id"]
+
 
 class SlackMethods:
     """Slack methods to communicate with zoozl slack server."""
@@ -102,6 +132,58 @@ class SlackMethods:
         return self.send_slack_event(body)
 
 
+class WhatsAppMethods:
+    """WhatsApp methods to communicate with zoozl WhatsApp server."""
+
+    def get_whatsapp_signature(self, body: bytes):
+        """Return WhatsApp X-Hub-Signature-256 header value."""
+        hasher = hmac.new(
+            self.whatsapp_app_secret.encode("ascii"), body, digestmod="sha256"
+        )
+        return "sha256=" + hasher.hexdigest()
+
+    def send_whatsapp_event(self, body: dict):
+        """Send WhatsApp webhook event (POST)."""
+        body_bytes = json.dumps(body).encode("utf-8")
+        headers = {"Content-Type": "application/json"}
+        headers["X-Hub-Signature-256"] = self.get_whatsapp_signature(body_bytes)
+        req = urllib.request.Request(
+            f"http://localhost:{self.whatsapp_port}",
+            headers=headers,
+            data=body_bytes,
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=2) as response:
+                if "Content-Length" in response.headers:
+                    length = int(response.headers["Content-Length"])
+                    resp_body = response.read(length)
+                else:
+                    resp_body = b""
+                return response.status, response.headers, resp_body
+        except TimeoutError:
+            self.fail(f"Request to {req.full_url} timed out")
+
+    def send_whatsapp_verification(self, challenge="mychallenge"):
+        """Send WhatsApp webhook verification GET request."""
+        token = self.whatsapp_verify_token
+        url = (
+            f"http://localhost:{self.whatsapp_port}"
+            f"?hub.mode=subscribe&hub.verify_token={token}&hub.challenge={challenge}"
+        )
+        req = urllib.request.Request(url, method="GET")
+        try:
+            with urllib.request.urlopen(req, timeout=2) as response:
+                if "Content-Length" in response.headers:
+                    length = int(response.headers["Content-Length"])
+                    resp_body = response.read(length)
+                else:
+                    resp_body = b""
+                return response.status, response.headers, resp_body
+        except TimeoutError:
+            self.fail(f"Request to {req.full_url} timed out")
+
+
 class AbstractSlack(SlackMethods, ConfigurationMethods, TestCase):
     """Abstract testcases on slack server."""
 
@@ -134,6 +216,42 @@ class AbstractSlack(SlackMethods, ConfigurationMethods, TestCase):
 
     async def asyncTearDown(self):
         """Tear down slack server."""
+        self.server.close()
+        await self.server.wait_closed()
+        self.root.close()
+
+
+class AbstractWhatsApp(WhatsAppMethods, ConfigurationMethods, TestCase):
+    """Abstract testcases on WhatsApp server."""
+
+    async def send_whatsapp_event(self, body: dict):
+        """Handle asynchronously server and sender WhatsApp event."""
+        async with asyncio.TaskGroup() as tg:
+            task1 = tg.create_task(
+                asyncio.to_thread(super().send_whatsapp_event, body)
+            )
+        return task1.result()
+
+    async def send_whatsapp_verification(self, challenge="mychallenge"):
+        """Handle asynchronously server and sender WhatsApp verification."""
+        async with asyncio.TaskGroup() as tg:
+            task1 = tg.create_task(
+                asyncio.to_thread(super().send_whatsapp_verification, challenge)
+            )
+        return task1.result()
+
+    async def asyncSetUp(self):
+        """Set up WhatsApp server listening on socket."""
+        self.conf = load_configuration(self.config_file)
+        self.root = chatbot.InterfaceRoot(self.conf)
+        self.root.load()
+        self.server = await server.build_whatsapp_server(
+            self.root, self.conf["whatsapp_port"], force_bind=True
+        )
+        self.assertTrue(self.server.is_serving())
+
+    async def asyncTearDown(self):
+        """Tear down WhatsApp server."""
         self.server.close()
         await self.server.wait_closed()
         self.root.close()

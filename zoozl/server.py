@@ -23,7 +23,7 @@ from abc import abstractmethod
 from aiosmtpd.handlers import AsyncMessage
 from aiosmtpd.lmtp import LMTP
 
-from zoozl import chatbot, emailer, slack, websocket
+from zoozl import chatbot, emailer, slack, websocket, whatsapp
 
 log = logging.getLogger(__name__)
 
@@ -595,6 +595,110 @@ class SlackHandler(RequestHandler):
         return True
 
 
+class WhatsAppHandler(RequestHandler):
+    """Handle WhatsApp Cloud API webhook connections."""
+
+    @http_request
+    @allowed_methods("GET", "POST")
+    async def handle(self, reader, writer, msg):
+        """Handle new WhatsApp webhook request."""
+        if msg.method == "GET":
+            await self._handle_verification(writer, msg)
+        else:
+            await self._handle_notification(reader, writer, msg)
+
+    async def _handle_verification(self, writer, msg):
+        """Handle webhook verification GET request from Meta."""
+        params = {}
+        if "?" in msg.request_uri:
+            query_string = msg.request_uri.split("?", 1)[1]
+            for pair in query_string.split("&"):
+                if "=" in pair:
+                    key, value = pair.split("=", 1)
+                    params[key] = value
+        mode = params.get("hub.mode")
+        token = params.get("hub.verify_token")
+        challenge = params.get("hub.challenge", "")
+        if mode == "subscribe" and token == self.root.conf["whatsapp_verify_token"]:
+            write_http_response(
+                writer,
+                200,
+                {"Content-Type": "text/plain; charset=utf-8"},
+                body=challenge.encode("utf-8"),
+            )
+        else:
+            write_http_response(writer, 403)
+            log.warning("WhatsApp webhook verification failed")
+
+    async def _handle_notification(self, reader, writer, msg):
+        """Handle inbound WhatsApp message notification POST."""
+        if not await msg.read_body():
+            return
+        app_secret = self.root.conf.get("whatsapp_app_secret")
+        if app_secret and not self.valid_whatsapp_request(
+            writer, msg.headers, msg.body, app_secret
+        ):
+            return
+        try:
+            body = json.loads(msg.body)
+        except json.JSONDecodeError:
+            write_http_response(writer, 400)
+            log.warning("Invalid WhatsApp JSON format")
+            return
+        write_http_response(writer, 200)
+        await writer.drain()
+        writer.close()
+        await writer.wait_closed()
+        access_token = self.root.conf["whatsapp_access_token"]
+        phone_number_id = self.root.conf["whatsapp_phone_number_id"]
+        for entry in body.get("entry", []):
+            for change in entry.get("changes", []):
+                value = change.get("value", {})
+                for wa_message in value.get("messages", []):
+                    if wa_message.get("type") != "text":
+                        continue
+                    wa_id = wa_message.get("from")
+                    text = wa_message.get("text", {}).get("body", "")
+                    if wa_id and text:
+                        log.debug("Received WhatsApp message: %s", wa_message)
+                        bot = chatbot.Chat(
+                            wa_id,
+                            lambda reply, _to=wa_id: whatsapp.send_whatsapp(
+                                access_token, phone_number_id, _to, reply
+                            ),
+                            self.root,
+                        )
+                        await bot.ask(
+                            chatbot.Message(
+                                parts=[chatbot.MessagePart(text)], author=wa_id
+                            )
+                        )
+
+    @staticmethod
+    def valid_whatsapp_request(
+        writer, headers: dict, body: bytes, app_secret: str
+    ) -> bool:
+        """Verify that request comes from Meta using X-Hub-Signature-256.
+
+        :param writer: writer to send response
+        :param headers: headers from request
+        :param body: raw request body
+        :param app_secret: WhatsApp app secret
+        """
+        signature = headers.get("X-Hub-Signature-256")
+        if signature is None:
+            write_http_response(writer, 403)
+            log.warning("Missing X-Hub-Signature-256 header")
+            return False
+        hasher = hmac.new(app_secret.encode("ascii"), body, digestmod="sha256")
+        expected = "sha256=" + hasher.hexdigest()
+        if not hmac.compare_digest(expected, signature):
+            write_http_response(writer, 403)
+            log.warning("Invalid WhatsApp request signature")
+            return False
+        return True
+
+
 class EmailHandler(AsyncMessage):
     """Handle incoming emails as LMTP server."""
 
@@ -661,6 +765,18 @@ async def build_slack_server(
     )
 
 
+async def build_whatsapp_server(
+    root: chatbot.InterfaceRoot, port: int, force_bind: bool = False
+):
+    """Build WhatsApp webhook server from configuration."""
+    return await asyncio.start_server(
+        WhatsAppHandler(root).handle,
+        host="localhost",
+        port=port,
+        reuse_port=force_bind,
+    )
+
+
 async def build_servers(root: chatbot.Interface, conf: dict):
     """Build servers from configuration."""
     force_bind = conf.get("force_bind", False)
@@ -694,6 +810,19 @@ async def build_servers(root: chatbot.Interface, conf: dict):
                     host="localhost",
                     port=conf["email_port"],
                     reuse_port=force_bind,
+                )
+            )
+    if conf.get("whatsapp_port"):
+        if conf.get("whatsapp_verify_token") is None:
+            log.error("WhatsApp verify token not set, disabling WhatsApp server")
+        elif conf.get("whatsapp_access_token") is None:
+            log.error("WhatsApp access token not set, disabling WhatsApp server")
+        elif conf.get("whatsapp_phone_number_id") is None:
+            log.error("WhatsApp phone number ID not set, disabling WhatsApp server")
+        else:
+            servers.append(
+                await build_whatsapp_server(
+                    root, conf["whatsapp_port"], force_bind
                 )
             )
     return servers
