@@ -67,6 +67,11 @@ slack_signing_secret = "abc123" # Mandatory if slack_port is provided, secret ke
 email_port = 8081  # if provided, server will listen to LMTP requests there
 email_address = "something@localhost"  # Mandatory if email_port is provided, email address to send back email messages to
 email_smtp_port = 25  # Optional port for sending out email messages to, defaults to 25
+whatsapp_port = 8082  # if provided, server will listen to WhatsApp Cloud API webhook requests there
+whatsapp_verify_token = "my_verify_token"  # Mandatory if whatsapp_port is provided, token for webhook verification
+whatsapp_access_token = "EAAG..."  # Mandatory if whatsapp_port is provided, Meta Graph API access token
+whatsapp_phone_number_id = "123456789"  # Mandatory if whatsapp_port is provided, WhatsApp phone number ID
+whatsapp_app_secret = "abc123"  # Optional, app secret for verifying X-Hub-Signature-256 on inbound requests
 
 [chatbot_fifa_extension]  # would be considered as specific configuration for plugin
 database_path = "tests/tmp"

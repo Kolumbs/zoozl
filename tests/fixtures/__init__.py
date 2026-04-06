@@ -3,7 +3,7 @@
 from unittest.mock import patch
 
 
-from . import slack
+from . import slack, whatsapp
 
 
-__all__ = ["slack", "patch"]
+__all__ = ["slack", "whatsapp", "patch"]
