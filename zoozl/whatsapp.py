@@ -1,9 +1,12 @@
 """WhatsApp Cloud API functions to route WhatsApp events for chat completion."""
 
 import json
-from urllib import request
+import logging
+from urllib import error, request
 
 from zoozl.chatbot import Message
+
+log = logging.getLogger(__name__)
 
 GRAPH_API_URL = "https://graph.facebook.com/v19.0/{phone_number_id}/messages"
 
@@ -35,5 +38,10 @@ def send_whatsapp(access_token: str, phone_number_id: str, to: str, message: Mes
                 data=json.dumps(data).encode(),
                 method="POST",
             )
-            with request.urlopen(req):
-                pass
+            try:
+                with request.urlopen(req):
+                    pass
+            except error.HTTPError as e:
+                log.error("WhatsApp API HTTP error %s sending to %s: %s", e.code, to, e)
+            except error.URLError as e:
+                log.error("WhatsApp API URL error sending to %s: %s", to, e)
