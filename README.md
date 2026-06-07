@@ -30,9 +30,9 @@ agent = "my_plugin_module"
 2. Make sure `my_plugin_module` is importable from within python that will run zoozl server
 3. Create file `my_plugin_module.py`
 ```
-from zoozl.chatbot import Agent
+from zoozl.chatbot import Agent as BaseAgent
 
-class Agent(Agent):
+class Agent(BaseAgent):
 
     async def consume(self, package):
         package.callback("Hello this is my plugin response")
