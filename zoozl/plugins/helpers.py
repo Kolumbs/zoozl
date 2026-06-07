@@ -1,44 +1,8 @@
-"""Example plugin to showcase zoozl chatbot mechanics."""
+"""Example single-agent plugin to showcase zoozl chatbot mechanics."""
 
 import random
 
-from rapidfuzz import process
-
-from zoozl.chatbot import Interface, Message
-
-
-class Help(Interface):
-    """Defines helper constructor for chat."""
-
-    aliases = {"do get help", "help"}
-    helps = (
-        "I can't do much. I can only play a game.",
-        "I can play games.",
-        "You can try to play games.",
-    )
-
-    async def consume(self, package):
-        """Try to help user."""
-        package.callback(random.choice(self.helps))
-
-    def is_complete(self):
-        """Complete immediately the conversation."""
-        return True
-
-
-class Hello(Interface):
-    """Defines hello commands."""
-
-    aliases = {"hello", "hi", "how are you", "hey"}
-
-    async def consume(self, package):
-        """Greet the user."""
-        greets = ["Hello", "Hey", "Hello, hello. What do you want to do?"]
-        package.callback(random.choice(greets))
-
-    def is_complete(self):
-        """Complete immediately the conversation."""
-        return True
+from zoozl.chatbot import Agent as BaseAgent, Message
 
 
 def count_bulls_cows(challenge, number):
@@ -56,40 +20,48 @@ def count_bulls_cows(challenge, number):
     return bulls, cows
 
 
-class Games(Interface):
-    """Defines games."""
+class Agent(BaseAgent):
+    """Default bundled agent."""
 
-    aliases = {"play games"}
-    complete = False
+    helps = (
+        "I can't do much. I can only play a game.",
+        "I can play games.",
+        "You can try to play games.",
+    )
+    greets = ("Hello", "Hey", "Hello, hello. What do you want to do?")
 
-    def is_complete(self):
-        """Return if conversation is complete."""
-        return self.complete
+    async def greet(self, package):
+        """Greet the user once."""
+        if package.conversation.ongoing:
+            package.callback("Hey. What would you like me to do?")
+        else:
+            package.callback("Hello!")
+            package.callback("I can do few things. Ask me for example to play games or something.")
+            package.conversation.ongoing = True
 
     async def consume(self, package):
-        """Take latest text from user and process it."""
-        if "game" not in package.conversation.data:
-            self.get_game(package)
-        else:
-            getattr(self, package.conversation.data["game"])(package)
-
-    def get_game(self, package):
-        """Try to get game name or ask for it."""
-        games = {
-            "bull": "bull_game",
-            "bulls and cows": "bull_game",
-            "bulls & cows": "bull_game",
-            "yes": "bull_game",
-        }
-        game = process.extractOne(
-            package.conversation.messages[-1].text.lower(), games.keys()
-        )
-        if game[1] >= 95:
-            package.conversation.data["game"] = games[game[0]]
+        """Handle one user message."""
+        text = package.last_message_text.strip().lower()
+        if text == "cancel":
+            package.conversation.data.pop("game", None)
+            package.conversation.data.pop("bull_number", None)
+            package.callback(random.choice(self.helps))
+            return
+        if "game" in package.conversation.data:
+            self.bull_game(package)
+            return
+        if "hello" in text or text in {"hi", "hey", "how are you"}:
+            package.callback(random.choice(self.greets))
+            return
+        if "play game" in text or "play games" in text:
+            package.callback(Message("what game you want to play? bulls and cows?"))
+            return
+        if text in {"bull", "bulls and cows", "bulls & cows", "yes"}:
+            package.conversation.data["game"] = "bull_game"
             package.callback("OK. Let's play bulls and cows")
             self.bull_game(package)
-        else:
-            package.callback(Message("what game you want to play? bulls and cows?"))
+            return
+        package.callback(random.choice(self.helps))
 
     def bull_game(self, package):
         """Play a number guessing game."""
@@ -105,7 +77,8 @@ class Games(Interface):
                 )
                 if bulls == 4:
                     package.callback("Congrats. You guessed right")
-                    self.complete = True
+                    package.conversation.data.pop("game", None)
+                    package.conversation.data.pop("bull_number", None)
                 else:
                     package.callback(f"You have {bulls} bulls and {cows} cows")
         else:

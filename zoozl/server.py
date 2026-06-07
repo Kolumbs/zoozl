@@ -441,10 +441,18 @@ class WebSocketHandler(RequestHandler):
         else:
             talker = str(uuid.uuid4())
         await writer.drain()
+        channel = {
+            "type": "websocket",
+            "talker": talker,
+            "session": str(id(writer)),
+            "auth": self.is_auth_required(),
+            "peer": writer.get_extra_info("peername"),
+        }
         bot = chatbot.Chat(
             talker,
             lambda x: self.send_message(writer, x),
             self.root,
+            channel=channel,
         )
         await bot.greet()
         await writer.drain()
@@ -557,6 +565,12 @@ class SlackHandler(RequestHandler):
                             body["user"],
                             lambda msg: slack.send_slack(slack_token, channel, msg),
                             self.root,
+                            channel={
+                                "type": "slack",
+                                "talker": body["user"],
+                                "channel": channel,
+                                "event_type": body.get("type"),
+                            },
                         )
                         parts = []
                         parts.append(chatbot.MessagePart(body["text"]))
@@ -667,6 +681,12 @@ class WhatsAppHandler(RequestHandler):
                                 access_token, phone_number_id, _to, reply
                             ),
                             self.root,
+                            channel={
+                                "type": "whatsapp",
+                                "talker": wa_id,
+                                "wa_id": wa_id,
+                                "phone_number_id": phone_number_id,
+                            },
                         )
                         await bot.ask(
                             chatbot.Message(
@@ -719,6 +739,13 @@ class EmailHandler(AsyncMessage):
                 self.root.conf["email_smtp_port"],
             ),
             self.root,
+            channel={
+                "type": "email",
+                "talker": message["to"],
+                "from": message["from"],
+                "subject": message.get("subject", ""),
+                "in_reply_to": message.get("in-reply-to", ""),
+            },
         )
         await bot.ask(emailer.serialise_email(message))
 

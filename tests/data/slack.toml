@@ -1,4 +1,4 @@
-extensions = ["zoozl.plugins.pong"]
+agent = "zoozl.plugins.pong"
 memory_path = "sqlite://tests/tmp/maindb"
 slack_port = 30002
 slack_signing_secret = "ABC"

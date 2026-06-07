@@ -24,7 +24,7 @@ import pydantic
 
 from zoozl import utils
 
-from . import api, embeddings
+from . import api
 
 log = logging.getLogger(__name__)
 
@@ -103,88 +103,52 @@ class InterfaceRoot:
             then history of talker conversations will be preserved upon instance
             destructions.
         """
-        self._commands = {}
         self.conf = (
             conf
             if conf
             else {
-                "extensions": ["zoozl.plugins.helpers"],
+                "agent": "zoozl.plugins.helpers",
             }
         )
         self.operation_callback = self.conf.get("operation_callback", lambda x: None)
-        self.lookup = None
+        self.agent = None
         self.loaded = False
         self.memory = None
         self.operations = None
 
     def load(self):
-        """Load interface map with available plugins and embedder."""
+        """Load agent."""
         self.memory = membank.LoadMemory(self.conf.get("memory_path", {}))
-        if "embedder" in self.conf:
-            self.lookup = embeddings.Lookup(self.memory, self.conf["embedder"])
-        else:
-            self.lookup = embeddings.Lookup(self.memory, embeddings.CharEmbedder())
         self.operations = Operations(self.operation_callback, self.memory, self.conf)
-        if "extensions" in self.conf:
-            for interface in self.conf["extensions"]:
-                extension = importlib.import_module(interface)
-                for ext in utils.load_from_module(extension, api.Interface):
-                    obj = ext()
-                    obj.load(self)
-                    for cmd in obj.aliases:
-                        if cmd in self._commands:
-                            raise RuntimeError(
-                                f"Clash of interfaces! '{cmd}' already loaded"
-                            )
-                        self._commands[cmd] = obj
-        # Load default command handlers, if not loaded by plugins
-        if "cancel" not in self._commands:
-            log.warning("No cancel command found in plugins.")
-            self._commands["cancel"] = api.Interface()
-        if "greet" not in self._commands:
-            log.warning("No greet command found in plugins.")
-            self._commands["greet"] = api.Interface()
-        if "help" not in self._commands:
-            log.warning("No help command found in plugins.")
-            self._commands["help"] = api.Interface()
+        path = self.conf.get("agent", "zoozl.plugins.helpers")
+        module = importlib.import_module(path)
+        classes = []
+        explicit = getattr(module, "Agent", None)
+        if (
+            isinstance(explicit, type)
+            and issubclass(explicit, api.Agent)
+            and explicit is not api.Agent
+        ):
+            classes = [explicit]
+        if not classes:
+            classes = utils.load_from_module(module, api.Agent)
+        if not classes:
+            raise RuntimeError(f"No Agent found in module '{path}'.")
+        self.agent = classes[0]()
+        self.agent.load(self)
         self.loaded = True
 
     def close(self):
         """When membank supports close this should close it."""
         # self._m.close()
 
-    async def consume(self, package, subject=None):
-        """Route the package object to appropriate chat interface.
-
-        :params package: a package object that contains data
-        :params subject: optional subject, otherwise taken from package
-        """
-        subject = package.conversation.subject if subject is None else subject
-        if subject not in self._commands:
-            raise RuntimeError(f"There is no subject '{subject}' available.")
-        await self._commands[subject].consume(package)
-
-    def is_subject_complete(self, cmd):
-        """Check if subject is complete."""
-        return self._commands[cmd].is_complete()
-
-    async def cancel(self, package):
-        """Cancel the subject if needed."""
-        await self.consume(package, "cancel")
+    async def consume(self, package):
+        """Deliver package to agent."""
+        await self.agent.consume(package)
 
     async def greet(self, package):
-        """Greet the user, if any plugin has defined it."""
-        await self.consume(package, "greet")
-
-    def get_embedding(self, text):
-        """Get embedding of the text."""
-        return self.lookup.get(text)
-
-    def get_interface_embeddings(self):
-        """Return list of cmds and their embedding values."""
-        if not self.loaded:
-            raise RuntimeError("Interface map not loaded.")
-        return [(cmd, self.get_embedding(cmd)) for cmd in self._commands]
+        """Send optional greeting."""
+        await self.agent.greet(package)
 
     async def handle_operation(self, payload, callback: Callable):
         """Validate operation payload."""
@@ -228,7 +192,7 @@ def get_new_package(talker):
 class Chat:
     """Interface for communication and routing with talker."""
 
-    def __init__(self, talker, callback, interface_root):
+    def __init__(self, talker, callback, interface_root, channel=None):
         """Initialise comm interface with talker, one instance per talker.
 
         Talker must be something unique. This will serve as identification across
@@ -243,14 +207,14 @@ class Chat:
             raise RuntimeError("InterfaceRoot must be in loaded state!")
         self._root = interface_root
         self._callback = callback
-        self._set_package(str(talker))
+        self._set_package(str(talker), channel or {"type": "unknown", "talker": str(talker)})
 
-    def _set_package(self, talker):
+    def _set_package(self, talker, channel):
         """Set package on the object."""
         conversation = self._root.memory.get.conversation(talker=talker, ongoing=True)
         if not conversation:
             conversation = api.Conversation(talker=talker)
-        self._package = api.Package(conversation, self._call)
+        self._package = api.Package(conversation, self._call, channel=channel)
 
     def _save_package(self):
         """Save package to memory."""
@@ -259,21 +223,21 @@ class Chat:
     async def greet(self):
         """Send first greeting message."""
         await self._root.greet(self._package)
+        self._save_package()
 
     async def ask(self, message):
         """Make conversation by receiving text and sending message back to callback."""
-        self.ongoing = True
-        if self.subject:
-            await self.do_subject(message)
-        else:
-            if not self.get_subject(message):
-                self.set_subject("help")
-            await self.do_subject(message)
+        if not isinstance(message, api.Message):
+            message = api.Message(message)
+        self._package.conversation.ongoing = True
+        self._package.conversation.messages.append(message)
+        await self._root.consume(self._package)
+        self._save_package()
 
     @property
     def talker(self):
         """Return talker."""
-        return self._package.conversion.talker
+        return self._package.conversation.talker
 
     @property
     def ongoing(self):
@@ -286,42 +250,6 @@ class Chat:
         self._package.conversation.ongoing = value
         self._save_package()
 
-    @property
-    def subject(self):
-        """Return subject if present."""
-        return self._package.conversation.subject
-
-    def get_subject(self, message):
-        """Try to understand subject from message.
-
-        if understood sets the subject and returns it otherwise returns None.
-        """
-        x = self._root.get_embedding(message.text)
-        for cmd, e in self._root.get_interface_embeddings():
-            eq = embeddings.get_cosine_similarity(x, e)
-            if eq > 0.8:
-                self.set_subject(cmd)
-                return cmd
-        return None
-
-    def set_subject(self, cmd):
-        """Set subject as per cmd."""
-        self._package.conversation.subject = cmd
-        self._save_package()
-
-    def clear_subject(self):
-        """Reset conversation to new start."""
-        self._clean()
-
-    async def do_subject(self, message):
-        """Start or continue on the subject."""
-        self._package.conversation.messages.append(message)
-        if not await self._root.cancel(self._package):
-            await self._root.consume(self._package)
-            self._save_package()
-        if self.subject and self._root.is_subject_complete(self.subject):
-            self.clear_subject()
-
     def _call(self, message):
         """Construct Message and route it to callback.
 
@@ -331,9 +259,3 @@ class Chat:
             message = api.Message(message)
         message.author = self._root.conf.get("author", "")
         self._callback(message)
-
-    def _clean(self):
-        """Clean all data in conversation to initial state."""
-        self._package.conversation.ongoing = False
-        self._save_package()
-        self._set_package(self._package.conversation.talker)

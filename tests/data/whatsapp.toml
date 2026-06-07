@@ -1,4 +1,4 @@
-extensions = ["zoozl.plugins.pong"]
+agent = "zoozl.plugins.pong"
 memory_path = "sqlite://tests/tmp/maindb"
 whatsapp_port = 30003
 whatsapp_verify_token = "test_verify_token"

@@ -15,7 +15,7 @@ where `chatbot.toml` is configuration file.
 
 ## Architecture
 
-zoozl package contains modules that handle various input interfaces like websocket or http POST and a chatbot interface that must be extended by plugins. Without plugin zoozl is not able to respond to any input. Plugin can be considered as a single chat assistant to handle a specific task. Plugin can be huge and complex or simple and small. It is up to the developer to decide how to structure plugins.
+zoozl package contains modules that handle various input interfaces like websocket or http POST and a chatbot interface that must be extended by a single agent. Without an agent zoozl is not able to respond to any input. The agent can be huge and complex or simple and small. It is up to the developer to decide how to compose behaviour.
 ![zoozl_package](docs/images/zoozl_package.svg)
 
 
@@ -25,40 +25,34 @@ zoozl package contains modules that handle various input interfaces like websock
 
 1. Create new toml configuration file (e.g. myconfig.toml)
 ```
-extensions = ['my_plugin_module']
+agent = "my_plugin_module"
 ```
 2. Make sure `my_plugin_module` is importable from within python that will run zoozl server
 3. Create file `my_plugin_module.py`
 ```
-from zoozl.chatbot import Interface
+from zoozl.chatbot import Agent
 
-class MyPlugin(Interface):
+class Agent(Agent):
 
-    aliases = ("call myplugin",)
-
-    def consume(self, context: , package: Package):
+    async def consume(self, package):
         package.callback("Hello this is my plugin response")
 ```
-4. Start zoozl server with your configuration file and asking to bot `call myplugin` it will respond `Hello this is my plugin response`
+4. Start zoozl server with your configuration file and ask the bot anything, it will respond `Hello this is my plugin response`
 ```bash
 python -m zoozl --conf myconfig.toml
 ```
 
 ### Plugin interface
 
-Plugin must implement `consume` method that takes two arguments `context` and `package`. `context` is a InterfaceRoot object that contains information about the current chatbot state and `package` is a `Package` object that contains input message and callback method to send response back to the user.
+Agent must implement `consume(package)`. `package` contains input message and callback method to send response back to the user. Optional methods are `load(root)` and `greet(package)`.
 
-Plugin may define `aliases` attribute that is a tuple of strings that are used to call the plugin. If `aliases` is not defined, plugin will not be called. Aliases are like commands that user can call to interact with the plugin, however those commands are constructed as embeddings and then compared with input message embeddings to find the best match.
-
-Special aliases are help, cancel and greet. Help alias is used when there is no matching aliases found in plugins, cancel alias is used to cancel current conversation and release it from current plugin handling, greet alias is called immediately before any user message is handled.
-
-If there is only one plugin expected, then aliases most likely should contain all three special aliases, thus plugin will be as soon as connection is made and everytime user asks anything.
+zoozl core does not route between multiple plugins. If you need multiple behaviours, compose them inside your agent using `conversation.data`.
 
 ### Configuration file
 
 Configuration file must conform to TOML format. Example of configuration:
 ```
-extensions = ["chatbot_fifa_extension", "zoozl.plugins.greeter"]
+agent = "chatbot_fifa_extension"
 websocket_port = 80  # if not provided, server will not listen to websocket requests
 author = "my_chatbot_name"  # defaults to empty string
 slack_port = 8080  # if not provided, server will not listen to slack requests
@@ -78,7 +72,7 @@ database_path = "tests/tmp"
 administrator = "admin"
 ```
 
-Root objects like author, extensions are configuration options for chatbot system wide setup, you can pass unlimited objects in configuration, however suggested is to add a component for each plugin and separate those within components.
+Root objects like author and agent are configuration options for chatbot system wide setup.
 
 
 * TODO: Describe plugin interface and creation

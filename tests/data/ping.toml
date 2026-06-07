@@ -1,4 +1,4 @@
-extensions = ["zoozl.plugins.pong"]
+agent = "zoozl.plugins.pong"
 websocket_port = 30001
 email_port = 30002
 email_address = "zoozl.sender@zoozl.local"

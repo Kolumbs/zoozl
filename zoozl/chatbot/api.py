@@ -133,6 +133,7 @@ class Package:
 
     conversation: Conversation
     callback: type
+    channel: dict = dataclasses.field(default_factory=dict)
 
     @property
     def last_message(self):
@@ -164,32 +165,22 @@ class Package:
         return attachments
 
 
-class Interface:
-    """Interface to the chat command handling.
-
-    Subclass this to extend a chat module
-
-    aliases - define a set of command functions that would trigger this event
-    """
-
-    # Command names as typed by the one who asks
-    aliases = set()
+class Agent:
+    """Single chatbot agent contract."""
 
     def load(self, root):
-        """Preload once an Interface.
+        """Preload once an Agent.
 
         :params root: interface root object
         """
 
+    async def greet(self, package):
+        """Optional greeting hook."""
+
     @abstractmethod
     async def consume(self, package):
-        """Handle all requests when subject is triggered.
+        """Handle inbound package."""
 
-        :param context: InterfaceMap object that allows to communicate with other
-            interfaces available apart from other things
-        :param package: is a special object defined as Package, exchanges data
-        """
 
-    def is_complete(self):
-        """Must return True or False."""
-        return False
+class Interface(Agent):
+    """Backward-compatible alias for the Agent contract."""
