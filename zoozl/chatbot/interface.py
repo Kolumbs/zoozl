@@ -207,7 +207,9 @@ class Chat:
             raise RuntimeError("InterfaceRoot must be in loaded state!")
         self._root = interface_root
         self._callback = callback
-        self._set_package(str(talker), channel or {"type": "unknown", "talker": str(talker)})
+        self._set_package(
+            str(talker), channel or {"type": "unknown", "talker": str(talker)}
+        )
 
     def _set_package(self, talker, channel):
         """Set package on the object."""

@@ -848,9 +848,7 @@ async def build_servers(root: chatbot.Interface, conf: dict):
             log.error("WhatsApp phone number ID not set, disabling WhatsApp server")
         else:
             servers.append(
-                await build_whatsapp_server(
-                    root, conf["whatsapp_port"], force_bind
-                )
+                await build_whatsapp_server(root, conf["whatsapp_port"], force_bind)
             )
     return servers
 

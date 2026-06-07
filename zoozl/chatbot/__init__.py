@@ -10,7 +10,6 @@ Usage:
 from .api import Agent, Interface, Message, Conversation, Package, MessagePart
 from .interface import Chat, InterfaceRoot
 
-
 __all__ = [
     "Chat",
     "Agent",

@@ -36,7 +36,9 @@ class Agent(BaseAgent):
             package.callback("Hey. What would you like me to do?")
         else:
             package.callback("Hello!")
-            package.callback("I can do few things. Ask me for example to play games or something.")
+            package.callback(
+                "I can do few things. Ask me for example to play games or something."
+            )
             package.conversation.ongoing = True
 
     async def consume(self, package):

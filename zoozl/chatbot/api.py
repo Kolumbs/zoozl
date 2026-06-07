@@ -175,7 +175,7 @@ class Agent:
         """
 
     async def greet(self, package):
-        """Optional greeting hook."""
+        """Send an optional greeting."""
 
     @abstractmethod
     async def consume(self, package):
