@@ -12,6 +12,7 @@ import asyncio
 import email
 import functools
 import hmac
+import http.cookies
 import json
 import logging
 import signal
@@ -31,6 +32,11 @@ log = logging.getLogger(__name__)
 class Interrupt(Exception):
     """Exception to interrupt server."""
 
+
+# Name of the cookie used to keep a persistent talker identity per browser/device.
+TALKER_COOKIE_NAME = "zoozl_talker"
+# How long the talker cookie lives, in seconds (1 year).
+TALKER_COOKIE_MAX_AGE = 31536000
 
 # Standard HTTP/1.1 constants
 DEFAULT_HTTP_BODY_ENCODING = "iso-8859-1"
@@ -428,7 +434,15 @@ class WebSocketHandler(RequestHandler):
             write_http_response(writer, 400)
             log.warning("Missing Sec-WebSocket-Key header")
             return
-        writer.write(websocket.handshake(msg.headers["sec-websocket-key"]))
+        # Resolve a persistent talker from the cookie before completing the
+        # handshake, so a Set-Cookie can ride along on the 101 response.
+        cookie_talker, set_cookie = (None, None)
+        if not self.is_auth_required():
+            cookie_talker, set_cookie = self.resolve_cookie_talker(msg)
+        extra_headers = (set_cookie,) if set_cookie else ()
+        writer.write(
+            websocket.handshake(msg.headers["sec-websocket-key"], extra_headers)
+        )
         await writer.drain()
         if self.is_auth_required():
             msg = await self.handle_data_frame(writer, reader)
@@ -439,7 +453,7 @@ class WebSocketHandler(RequestHandler):
             await writer.drain()
             talker = self.root.authenticate_token(msg["auth"])
         else:
-            talker = str(uuid.uuid4())
+            talker = cookie_talker
         await writer.drain()
         bot = chatbot.Chat(
             talker,
@@ -490,6 +504,31 @@ class WebSocketHandler(RequestHandler):
     def send_error(self, writer, txt):
         """Send error message."""
         self.send_packet(writer, {"error": txt})
+
+    def resolve_cookie_talker(self, msg):
+        """Resolve a persistent talker identity from the request cookie.
+
+        Returns a tuple ``(talker, set_cookie)`` where ``talker`` is the
+        identity to use for the conversation and ``set_cookie`` is a
+        ``Set-Cookie`` header line to send back (or ``None`` if the client
+        already presented a valid talker cookie).
+        """
+        jar = http.cookies.SimpleCookie()
+        try:
+            jar.load(msg.headers.get("cookie", ""))
+        except http.cookies.CookieError:
+            jar = http.cookies.SimpleCookie()
+        morsel = jar.get(TALKER_COOKIE_NAME)
+        if morsel and morsel.value:
+            return morsel.value, None
+        talker = str(uuid.uuid4())
+        attrs = (
+            f"{TALKER_COOKIE_NAME}={talker}; Path=/; "
+            f"Max-Age={TALKER_COOKIE_MAX_AGE}; HttpOnly; SameSite=Lax"
+        )
+        if self.root.conf.get("cookie_secure", False):
+            attrs += "; Secure"
+        return talker, f"Set-Cookie: {attrs}"
 
     async def handle_data_frame(self, writer, reader):
         """Handle data frame."""

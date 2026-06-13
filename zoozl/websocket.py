@@ -105,8 +105,12 @@ async def read_frame(reader):
     raise RuntimeError(f"Unsupported frame op code: {op_code}")
 
 
-def handshake(webkey):
-    """Give bytes object for valid websocket handshake."""
+def handshake(webkey, extra_headers=None):
+    """Give bytes object for valid websocket handshake.
+
+    :param extra_headers: optional iterable of header lines (e.g. "Set-Cookie: ...")
+        to append to the handshake response, without trailing CRLF.
+    """
     magic_uuid = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
     webkey = webkey.encode() + magic_uuid
     hasher = hashlib.sha1()
@@ -117,5 +121,7 @@ def handshake(webkey):
     sendback += b"Upgrade: websocket\r\n"
     sendback += b"Connection: Upgrade\r\n"
     sendback += b"Sec-WebSocket-Accept: " + key + b"\r\n"
+    for header in extra_headers or ():
+        sendback += header.encode("ascii") + b"\r\n"
     sendback += b"\r\n"
     return sendback
