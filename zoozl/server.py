@@ -498,6 +498,9 @@ class WebSocketHandler(RequestHandler):
             writer,
             timeout=300,
         )
+        if frame is None:
+            # wait_for_response timed out (idle client); close the connection.
+            return {"break": True}
         if frame.op_code == "TEXT":
             log.info("Asking: %s", frame.data.decode())
             txt = frame.data.decode()
