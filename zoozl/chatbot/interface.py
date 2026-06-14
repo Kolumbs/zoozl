@@ -257,7 +257,14 @@ class Chat:
         self._root.memory.put(self._package.conversation)
 
     async def greet(self):
-        """Send first greeting message."""
+        """Greet only a brand-new conversation.
+
+        On reconnect the prior conversation is reloaded, so greeting again would
+        re-invoke handlers on the stale last message. Skip the greeting (send
+        nothing) when the conversation already has messages.
+        """
+        if self._package.conversation.messages:
+            return
         await self._root.greet(self._package)
 
     async def ask(self, message):
